@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asset Allocation Comparator</title>
+  <style>
+    /* ─── Reset & Variables ─────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2128;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --blue:      #58a6ff;
+      --green:     #3fb950;
+      --red:       #f85149;
+      --yellow:    #d29922;
+      --a-color:   #58a6ff;
+      --b-color:   #3fb950;
+      --radius:    8px;
+    }
+
+    html { font-size: 15px; scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ─── Header ────────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-left { display: flex; align-items: center; gap: 0.75rem; }
+    .header-icon { font-size: 1.5rem; }
+    .header-title { font-size: 1.1rem; font-weight: 600; }
+    .header-sub   { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+    .header-date  { font-size: 0.7rem; color: var(--muted); }
+
+    /* ─── Main layout ───────────────────────────────────────── */
+    main {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 1.75rem 1.25rem 3rem;
+    }
+
+    /* ─── Section labels ────────────────────────────────────── */
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.75rem;
+    }
+
+    /* ─── Portfolio grid ────────────────────────────────────── */
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    @media (max-width: 720px) {
+      .portfolio-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Portfolio card ────────────────────────────────────── */
+    .p-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .p-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.85rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .p-card.a .p-card-header { border-top: 3px solid var(--a-color); }
+    .p-card.b .p-card-header { border-top: 3px solid var(--b-color); }
+
+    .p-name-input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid transparent;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      outline: none;
+      width: 160px;
+      transition: border-color 0.15s;
+    }
+    .p-name-input:focus { border-bottom-color: var(--border); }
+
+    .p-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+    select.preset-sel {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.72rem;
+      padding: 0.28rem 0.45rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-sm {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.72rem;
+      padding: 0.28rem 0.55rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-sm:hover { color: var(--text); border-color: var(--muted); }
+
+    /* ─── ETF rows ──────────────────────────────────────────── */
+    .etf-rows { padding: 0.5rem 1.25rem; }
+
+    .etf-row {
+      display: grid;
+      grid-template-columns: 72px 1fr 64px;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .etf-row:last-child { border-bottom: none; }
+
+    .etf-ticker-col { line-height: 1.3; }
+    .etf-ticker { font-size: 0.875rem; font-weight: 700; }
+    .etf-sub    { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+
+    /* Range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+    .p-card.a input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--a-color);
+      cursor: pointer;
+    }
+    .p-card.b input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--b-color);
+      cursor: pointer;
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--blue);
+      cursor: pointer;
+      border: none;
+    }
+
+    /* Number input */
+    input[type="number"].w-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.82rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      padding: 0.28rem 0.4rem;
+      border-radius: 4px;
+      width: 100%;
+      text-align: right;
+      -moz-appearance: textfield;
+    }
+    input[type="number"].w-input::-webkit-inner-spin-button,
+    input[type="number"].w-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    input[type="number"].w-input:focus {
+      outline: none;
+      border-color: var(--blue);
+    }
+
+    /* ─── Total bar ─────────────────────────────────────────── */
+    .p-total-row {
+      padding: 0.65rem 1.25rem 0.5rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .total-lbl  { font-size: 0.72rem; color: var(--muted); }
+    .total-val  { font-size: 0.82rem; font-weight: 700; font-family: monospace; }
+    .total-val.ok    { color: var(--green); }
+    .total-val.over  { color: var(--red); }
+    .total-val.under { color: var(--yellow); }
+
+    .alloc-bar-wrap { padding: 0 1.25rem 0.75rem; background: var(--surface2); }
+    .alloc-bar {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .alloc-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.2s ease, background 0.2s ease;
+    }
+
+    /* ─── Stats section ─────────────────────────────────────── */
+    .stats-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .stats-card-header {
+      padding: 0.9rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .stats-card-title { font-size: 0.95rem; font-weight: 600; }
+
+    .legend {
+      display: flex;
+      gap: 1.25rem;
+      margin-left: auto;
+    }
+    .leg-item {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .leg-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ─── Stat groups & rows ────────────────────────────────── */
+    .stat-group-hdr {
+      background: var(--surface2);
+      padding: 0.4rem 1.5rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .stat-row {
+      display: grid;
+      grid-template-columns: 1fr 90px 200px 90px;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .stat-row:last-child { border-bottom: none; }
+
+    @media (max-width: 620px) {
+      .stat-row {
+        grid-template-columns: 1fr 72px 120px 72px;
+        gap: 0.5rem;
+        padding: 0.65rem 1rem;
+      }
+    }
+
+    .stat-name { font-size: 0.82rem; }
+    .stat-desc { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+
+    .stat-val {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+    .stat-val.a { color: var(--a-color); text-align: right; }
+    .stat-val.b { color: var(--b-color); text-align: left; }
+
+    /* Butterfly bars */
+    .bfly {
+      display: flex;
+      align-items: center;
+      height: 20px;
+    }
+    .bfly-half {
+      flex: 1;
+      height: 10px;
+      display: flex;
+    }
+    .bfly-half.left  { justify-content: flex-end; }
+    .bfly-half.right { justify-content: flex-start; }
+    .bfly-bar {
+      height: 100%;
+      min-width: 2px;
+      transition: width 0.3s ease;
+    }
+    .bfly-bar.a {
+      background: var(--a-color);
+      opacity: 0.75;
+      border-radius: 3px 0 0 3px;
+    }
+    .bfly-bar.b {
+      background: var(--b-color);
+      opacity: 0.75;
+      border-radius: 0 3px 3px 0;
+    }
+    .bfly-ctr {
+      width: 2px;
+      height: 16px;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+
+    /* Better badge */
+    .badge-up {
+      display: inline-block;
+      font-size: 0.6rem;
+      background: rgba(63,185,80,0.15);
+      color: var(--green);
+      border: 1px solid rgba(63,185,80,0.3);
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 3px;
+      vertical-align: middle;
+      line-height: 1.4;
+    }
+
+    /* ─── Methodology ───────────────────────────────────────── */
+    .method-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem 1.5rem;
+      margin-top: 1.5rem;
+    }
+    .method-card h3 {
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+    }
+    .method-card p, .method-card li {
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .method-card ul { padding-left: 1.2rem; margin-top: 0.4rem; }
+    .method-card li { margin-bottom: 0.2rem; }
+    .method-card strong { color: var(--text); font-weight: 600; }
+
+    /* ─── Empty state ───────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 3rem 2rem;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    /* ─── Footer ────────────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.7rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 2rem;
+    }
+
+    /* ─── Tooltip ───────────────────────────────────────────── */
+    [title] { cursor: help; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <span class="header-icon">📊</span>
+    <div>
+      <div class="header-title">Asset Allocation Comparator</div>
+      <div class="header-sub">Blend ETFs · Compare factor exposures · Estimate expected returns</div>
+    </div>
+  </div>
+  <div class="header-date">Data · Feb 2026</div>
+</header>
+
+<main>
+
+  <!-- ── Portfolios ───────────────────────────────────────────── -->
+  <div class="section-label">Portfolios</div>
+  <div class="portfolio-grid">
+
+    <!-- Portfolio A -->
+    <div class="p-card a" id="card-a">
+      <div class="p-card-header">
+        <input class="p-name-input" id="name-a" type="text" value="Portfolio A" autocomplete="off" />
+        <div class="p-actions">
+          <select class="preset-sel" id="preset-a" onchange="applyPreset('a',this.value)">
+            <option value="">Presets…</option>
+            <option value="2fund">2-Fund (VTI/VXUS 60/40)</option>
+            <option value="us_only">100% US (VTI)</option>
+            <option value="intl_only">100% International (VXUS)</option>
+            <option value="3fund">3-Fund + Small Value</option>
+            <option value="avantis_core">Avantis Core (AVGE/AVUV)</option>
+            <option value="factor_tilt">Factor Tilted</option>
+            <option value="deep_value">Deep Value</option>
+            <option value="all_avantis">All Avantis Blend</option>
+          </select>
+          <button class="btn-sm" onclick="normalizePortfolio('a')">Normalize</button>
+        </div>
+      </div>
+      <div class="etf-rows" id="rows-a"></div>
+      <div class="p-total-row">
+        <span class="total-lbl">Total Allocation</span>
+        <span class="total-val under" id="total-a">0%</span>
+      </div>
+      <div class="alloc-bar-wrap">
+        <div class="alloc-bar">
+          <div class="alloc-bar-fill" id="bar-a" style="width:0%;background:var(--a-color)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio B -->
+    <div class="p-card b" id="card-b">
+      <div class="p-card-header">
+        <input class="p-name-input" id="name-b" type="text" value="Portfolio B" autocomplete="off" />
+        <div class="p-actions">
+          <select class="preset-sel" id="preset-b" onchange="applyPreset('b',this.value)">
+            <option value="">Presets…</option>
+            <option value="2fund">2-Fund (VTI/VXUS 60/40)</option>
+            <option value="us_only">100% US (VTI)</option>
+            <option value="intl_only">100% International (VXUS)</option>
+            <option value="3fund">3-Fund + Small Value</option>
+            <option value="avantis_core">Avantis Core (AVGE/AVUV)</option>
+            <option value="factor_tilt">Factor Tilted</option>
+            <option value="deep_value">Deep Value</option>
+            <option value="all_avantis">All Avantis Blend</option>
+          </select>
+          <button class="btn-sm" onclick="normalizePortfolio('b')">Normalize</button>
+        </div>
+      </div>
+      <div class="etf-rows" id="rows-b"></div>
+      <div class="p-total-row">
+        <span class="total-lbl">Total Allocation</span>
+        <span class="total-val under" id="total-b">0%</span>
+      </div>
+      <div class="alloc-bar-wrap">
+        <div class="alloc-bar">
+          <div class="alloc-bar-fill" id="bar-b" style="width:0%;background:var(--b-color)"></div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /portfolio-grid -->
+
+  <!-- ── Stats comparison ─────────────────────────────────────── -->
+  <div class="section-label">Comparison</div>
+  <div class="stats-card">
+    <div class="stats-card-header">
+      <span class="stats-card-title">Portfolio Statistics</span>
+      <div class="legend">
+        <div class="leg-item">
+          <div class="leg-dot" style="background:var(--a-color)"></div>
+          <span id="leg-a">Portfolio A</span>
+        </div>
+        <div class="leg-item">
+          <div class="leg-dot" style="background:var(--b-color)"></div>
+          <span id="leg-b">Portfolio B</span>
+        </div>
+      </div>
+    </div>
+    <div id="stats-body">
+      <div class="empty-state">Set allocations in both portfolios above to see comparison.</div>
+    </div>
+  </div>
+
+  <!-- ── Methodology ──────────────────────────────────────────── -->
+  <div class="method-card">
+    <h3>Methodology &amp; Data Notes</h3>
+    <p>ETF characteristics are approximate values sourced from Vanguard and Avantis fund data as of February 2026.
+       All metrics are estimates and should not be used as the sole basis for investment decisions.</p>
+    <ul>
+      <li><strong>P/E Ratio:</strong> Blended using the harmonic mean (weighted average of earnings yields), which prevents distortion from high-P/E outliers and correctly reflects the aggregate earnings yield of the portfolio.</li>
+      <li><strong>Earnings Yield:</strong> 1/PE × 100%. A commonly used simplified proxy for expected real returns over the long run.</li>
+      <li><strong>Value Tilt (HML):</strong> Fama-French High-Minus-Low factor loading. 0 ≈ market-cap blend; higher = more tilted toward value stocks.</li>
+      <li><strong>Size Tilt (SMB):</strong> Fama-French Small-Minus-Big factor loading. 0 ≈ large-cap weighted; higher = more tilted toward small-cap stocks.</li>
+      <li><strong>Factor Model Return Estimate:</strong> = 4.0% (risk-free) + 4.5% (equity market premium) + HML × 3.5% (value premium) + SMB × 2.5% (size premium). Based on historical Fama-French factor research. Factor premiums are not guaranteed to persist in the future.</li>
+      <li><strong>Expense Ratio:</strong> Weighted average annual fund cost. Excluded from return estimates — subtract from any return figure for net expected return.</li>
+      <li><strong>This tool is for educational and illustrative purposes only. Not investment advice.</strong></li>
+    </ul>
+  </div>
+
+</main>
+
+<footer>
+  Asset Allocation Comparator &nbsp;·&nbsp; ETF data approximate as of Feb 2026 &nbsp;·&nbsp; Not investment advice
+</footer>
+
+<script>
+// ================================================================
+// ETF DATA
+// Source: Vanguard / Avantis fund pages, Morningstar, ETF Database
+// Updated: February 2026
+// ================================================================
+const ETFS = {
+  VTI: {
+    ticker:  'VTI',
+    name:    'Vanguard Total Stock Market ETF',
+    sub:     'US Total Market',
+    pe:      28.5,   // trailing P/E (harmonic mean across holdings)
+    pb:      4.20,
+    intlPct: 0,      // % international (ex-US)
+    scPct:   6,      // % small-cap
+    smb:     0.05,   // Fama-French SMB loading
+    hml:     0.00,   // Fama-French HML loading
+    er:      0.03,   // expense ratio %
+    tip:     'Market-cap weighted index covering ~100% of investable US equity market. ~3,700 holdings. No factor tilt.',
+  },
+  VXUS: {
+    ticker:  'VXUS',
+    name:    'Vanguard Total International Stock ETF',
+    sub:     'International ex-US',
+    pe:      15.5,
+    pb:      1.90,
+    intlPct: 97,
+    scPct:   10,
+    smb:     0.05,
+    hml:     0.10,
+    er:      0.07,
+    tip:     'Market-cap weighted index of ~8,600 non-US stocks. ~75% developed, ~25% emerging markets. No active factor tilt.',
+  },
+  AVGE: {
+    ticker:  'AVGE',
+    name:    'Avantis All Equity Markets ETF',
+    sub:     'Global · light factor tilts',
+    pe:      18.5,
+    pb:      2.80,
+    intlPct: 32,
+    scPct:   15,
+    smb:     0.20,
+    hml:     0.20,
+    er:      0.23,
+    tip:     'Fund-of-funds (Avantis ETFs). Target: ~70% US, ~17% intl developed, ~10% EM, ~3% sector. Light value, size, and profitability tilts.',
+  },
+  AVGV: {
+    ticker:  'AVGV',
+    name:    'Avantis All Equity Markets Value ETF',
+    sub:     'Global · strong value tilt',
+    pe:      13.5,
+    pb:      2.00,
+    intlPct: 40,
+    scPct:   25,
+    smb:     0.40,
+    hml:     0.45,
+    er:      0.26,
+    tip:     'Fund-of-funds (Avantis ETFs). Concentrated in value factors globally. ~21% to AVUV (US SCV), ~10% to AVDV (intl SCV). Strong HML loading.',
+  },
+  AVUV: {
+    ticker:  'AVUV',
+    name:    'Avantis U.S. Small Cap Value ETF',
+    sub:     'US Small Cap Value',
+    pe:      12.5,
+    pb:      1.27,
+    intlPct: 0,
+    scPct:   95,
+    smb:     0.95,
+    hml:     0.55,
+    er:      0.25,
+    tip:     'Actively managed. ~761 holdings selected from Russell 2000 for low P/B and low growth forecasts. Strong SMB (0.95) and HML (0.55) loadings. ~30% Financials.',
+  },
+  AVUS: {
+    ticker:  'AVUS',
+    name:    'Avantis U.S. Equity ETF',
+    sub:     'US equity · profitability tilt',
+    pe:      22.5,
+    pb:      3.50,
+    intlPct: 1,
+    scPct:   10,
+    smb:     0.10,
+    hml:     0.10,
+    er:      0.15,
+    tip:     'Actively managed broad US equity. ~1,900 holdings. Light tilts toward value and profitability vs. VTI. Very low tracking error relative to market.',
+  },
+};
+
+const TICKERS = ['VTI', 'VXUS', 'AVGE', 'AVGV', 'AVUV', 'AVUS'];
+
+// ================================================================
+// PRESETS
+// ================================================================
+const PRESETS = {
+  '2fund':        { VTI:60, VXUS:40, AVGE:0,  AVGV:0,  AVUV:0,  AVUS:0  },
+  'us_only':      { VTI:100,VXUS:0,  AVGE:0,  AVGV:0,  AVUV:0,  AVUS:0  },
+  'intl_only':    { VTI:0,  VXUS:100,AVGE:0,  AVGV:0,  AVUV:0,  AVUS:0  },
+  '3fund':        { VTI:50, VXUS:30, AVGE:0,  AVGV:0,  AVUV:20, AVUS:0  },
+  'avantis_core': { VTI:0,  VXUS:0,  AVGE:60, AVGV:0,  AVUV:40, AVUS:0  },
+  'factor_tilt':  { VTI:0,  VXUS:20, AVGE:20, AVGV:0,  AVUV:40, AVUS:20 },
+  'deep_value':   { VTI:0,  VXUS:0,  AVGE:0,  AVGV:50, AVUV:50, AVUS:0  },
+  'all_avantis':  { VTI:0,  VXUS:0,  AVGE:40, AVGV:30, AVUV:20, AVUS:10 },
+};
+
+// ================================================================
+// STATE — default portfolios give a useful starting comparison
+// ================================================================
+const state = {
+  a: { VTI:60, VXUS:40, AVGE:0,  AVGV:0,  AVUV:0,  AVUS:0  },
+  b: { VTI:0,  VXUS:20, AVGE:20, AVGV:0,  AVUV:40, AVUS:20 },
+};
+
+// ================================================================
+// BUILD PORTFOLIO INPUT ROWS
+// ================================================================
+function buildRows(p) {
+  const container = document.getElementById(`rows-${p}`);
+  container.innerHTML = '';
+  TICKERS.forEach(tk => {
+    const etf = ETFS[tk];
+    const v   = state[p][tk] ?? 0;
+    const row = document.createElement('div');
+    row.className = 'etf-row';
+    row.innerHTML = `
+      <div class="etf-ticker-col" title="${etf.name}: ${etf.tip}">
+        <div class="etf-ticker">${tk}</div>
+        <div class="etf-sub">${etf.sub}</div>
+      </div>
+      <input type="range" min="0" max="100" step="1" value="${v}"
+        id="sl-${p}-${tk}"
+        oninput="onSlider('${p}','${tk}',this.value)">
+      <input type="number" class="w-input" min="0" max="100" step="1" value="${v}"
+        id="nu-${p}-${tk}"
+        oninput="onNumber('${p}','${tk}',this.value)">
+    `;
+    container.appendChild(row);
+  });
+}
+
+// ================================================================
+// INPUT HANDLERS
+// ================================================================
+function onSlider(p, tk, raw) {
+  const v = Math.max(0, Math.min(100, parseFloat(raw) || 0));
+  state[p][tk] = v;
+  const num = document.getElementById(`nu-${p}-${tk}`);
+  if (num) num.value = v;
+  refreshTotal(p);
+  renderStats();
+}
+
+function onNumber(p, tk, raw) {
+  const v = Math.max(0, Math.min(100, parseFloat(raw) || 0));
+  state[p][tk] = v;
+  const sl = document.getElementById(`sl-${p}-${tk}`);
+  if (sl) sl.value = v;
+  refreshTotal(p);
+  renderStats();
+}
+
+function applyPreset(p, key) {
+  if (!key || !PRESETS[key]) return;
+  const preset = PRESETS[key];
+  TICKERS.forEach(tk => {
+    state[p][tk] = preset[tk] ?? 0;
+    const sl = document.getElementById(`sl-${p}-${tk}`);
+    const nu = document.getElementById(`nu-${p}-${tk}`);
+    if (sl) sl.value = state[p][tk];
+    if (nu) nu.value = state[p][tk];
+  });
+  document.getElementById(`preset-${p}`).value = '';
+  refreshTotal(p);
+  renderStats();
+}
+
+function normalizePortfolio(p) {
+  const total = TICKERS.reduce((s,tk) => s + (state[p][tk]||0), 0);
+  if (total === 0) return;
+  TICKERS.forEach(tk => {
+    state[p][tk] = Math.round((state[p][tk]||0) / total * 100);
+  });
+  // Correct rounding drift
+  const newTotal = TICKERS.reduce((s,tk) => s + state[p][tk], 0);
+  if (newTotal !== 100) {
+    const largest = TICKERS.reduce((a,b) => state[p][a] >= state[p][b] ? a : b);
+    state[p][largest] += (100 - newTotal);
+  }
+  TICKERS.forEach(tk => {
+    const sl = document.getElementById(`sl-${p}-${tk}`);
+    const nu = document.getElementById(`nu-${p}-${tk}`);
+    if (sl) sl.value = state[p][tk];
+    if (nu) nu.value = state[p][tk];
+  });
+  refreshTotal(p);
+  renderStats();
+}
+
+// ================================================================
+// TOTAL BAR
+// ================================================================
+function refreshTotal(p) {
+  const total = TICKERS.reduce((s,tk) => s + (state[p][tk]||0), 0);
+  const valEl = document.getElementById(`total-${p}`);
+  const barEl = document.getElementById(`bar-${p}`);
+  valEl.textContent = `${total}%`;
+  valEl.className   = 'total-val ' + (total === 100 ? 'ok' : total > 100 ? 'over' : 'under');
+  const fill = Math.min(total, 100);
+  barEl.style.width      = `${fill}%`;
+  const colorOk  = p === 'a' ? 'var(--a-color)' : 'var(--b-color)';
+  barEl.style.background = total === 100 ? colorOk : total > 100 ? 'var(--red)' : 'var(--yellow)';
+}
+
+// ================================================================
+// CALC PORTFOLIO STATS
+// ================================================================
+const RF   = 4.0;   // risk-free rate %
+const MKT  = 4.5;   // equity market premium %
+const VPREM = 3.5;  // value premium per unit HML %
+const SPREM = 2.5;  // size premium per unit SMB %
+
+function calcStats(p) {
+  const w     = state[p];
+  const total = TICKERS.reduce((s,tk) => s + (w[tk]||0), 0);
+  if (total === 0) return null;
+
+  let eySum    = 0; // sum of weighted earnings yields → harmonic mean PE
+  let pb       = 0;
+  let intlPct  = 0;
+  let scPct    = 0;
+  let smb      = 0;
+  let hml      = 0;
+  let er       = 0;
+
+  TICKERS.forEach(tk => {
+    const frac = (w[tk]||0) / total;
+    const e    = ETFS[tk];
+    eySum   += frac * (1 / e.pe);
+    pb      += frac * e.pb;
+    intlPct += frac * e.intlPct;
+    scPct   += frac * e.scPct;
+    smb     += frac * e.smb;
+    hml     += frac * e.hml;
+    er      += frac * e.er;
+  });
+
+  const pe            = 1 / eySum;
+  const earningsYield = eySum * 100;          // %
+  const factorReturn  = RF + MKT + hml * VPREM + smb * SPREM; // nominal %
+
+  return { pe, pb, earningsYield, intlPct, scPct, smb, hml, er, factorReturn, total };
+}
+
+// ================================================================
+// STAT DEFINITIONS
+// ================================================================
+const STAT_GROUPS = [
+  {
+    label: 'Valuation',
+    stats: [
+      {
+        key:    'pe',
+        name:   'P/E Ratio',
+        desc:   'Harmonic mean price-to-earnings',
+        tip:    'Blended P/E using harmonic mean (weighted avg of earnings yields). Lower = cheaper relative to earnings.',
+        fmt:    v => v.toFixed(1) + 'x',
+        better: 'lower',
+      },
+      {
+        key:    'pb',
+        name:   'P/B Ratio',
+        desc:   'Weighted avg price-to-book',
+        tip:    'Weighted average price-to-book ratio. Lower = more value exposure.',
+        fmt:    v => v.toFixed(2) + 'x',
+        better: 'lower',
+      },
+      {
+        key:    'earningsYield',
+        name:   'Earnings Yield',
+        desc:   '1/PE × 100% — simple return proxy',
+        tip:    'Earnings Yield = 100/PE. Used as a simplified proxy for expected long-run real returns.',
+        fmt:    v => v.toFixed(2) + '%',
+        better: 'higher',
+      },
+    ],
+  },
+  {
+    label: 'Factor Exposures',
+    stats: [
+      {
+        key:    'hml',
+        name:   'Value Tilt (HML)',
+        desc:   'Fama-French High-Minus-Low loading',
+        tip:    'HML factor loading. 0 = market blend. Higher = more tilted toward value stocks. AVUV ~0.55, VTI ~0.00.',
+        fmt:    v => v.toFixed(2),
+        better: 'neutral',
+      },
+      {
+        key:    'smb',
+        name:   'Size Tilt (SMB)',
+        desc:   'Fama-French Small-Minus-Big loading',
+        tip:    'SMB factor loading. 0 = large-cap. Higher = more small-cap. AVUV ~0.95, VTI ~0.05.',
+        fmt:    v => v.toFixed(2),
+        better: 'neutral',
+      },
+      {
+        key:    'intlPct',
+        name:   'International Allocation',
+        desc:   'Weighted % in ex-US markets',
+        tip:    'Percentage of portfolio in non-US markets (developed + emerging). VXUS = 97%, VTI = 0%.',
+        fmt:    v => v.toFixed(1) + '%',
+        better: 'neutral',
+      },
+      {
+        key:    'scPct',
+        name:   'Small-Cap Exposure',
+        desc:   'Est. % in small-cap stocks',
+        tip:    'Estimated percentage allocated to small-capitalization equities.',
+        fmt:    v => v.toFixed(1) + '%',
+        better: 'neutral',
+      },
+    ],
+  },
+  {
+    label: 'Expected Return Estimates (Model)',
+    stats: [
+      {
+        key:    'factorReturn',
+        name:   'Factor Model Return',
+        desc:   `${RF}% RF + ${MKT}% MKT + HML×${VPREM}% + SMB×${SPREM}%`,
+        tip:    `Nominal expected return from Fama-French model. RF=${RF}%, Market premium=${MKT}%, Value premium=${VPREM}%/unit HML, Size premium=${SPREM}%/unit SMB. Historical — not guaranteed.`,
+        fmt:    v => v.toFixed(2) + '%',
+        better: 'higher',
+      },
+      {
+        key:    'earningsYield',
+        name:   'Earnings Yield (Return Proxy)',
+        desc:   'Simplified expected real return estimate',
+        tip:    'Earnings yield as a rough long-run real return proxy. Does not account for growth expectations or factor premiums.',
+        fmt:    v => v.toFixed(2) + '%',
+        better: 'higher',
+      },
+    ],
+  },
+  {
+    label: 'Cost',
+    stats: [
+      {
+        key:    'er',
+        name:   'Expense Ratio',
+        desc:   'Weighted avg annual fund cost',
+        tip:    'Blended weighted-average expense ratio. Subtract from expected returns for net estimates.',
+        fmt:    v => v.toFixed(3) + '%',
+        better: 'lower',
+      },
+    ],
+  },
+];
+
+// ================================================================
+// RENDER STATS
+// ================================================================
+function renderStats() {
+  const sa = calcStats('a');
+  const sb = calcStats('b');
+
+  const nameA = document.getElementById('name-a').value.trim() || 'Portfolio A';
+  const nameB = document.getElementById('name-b').value.trim() || 'Portfolio B';
+  document.getElementById('leg-a').textContent = nameA;
+  document.getElementById('leg-b').textContent = nameB;
+
+  const body = document.getElementById('stats-body');
+
+  if (!sa || !sb) {
+    body.innerHTML = '<div class="empty-state">Set allocations in both portfolios above to see comparison.</div>';
+    return;
+  }
+
+  let html = '';
+
+  STAT_GROUPS.forEach(grp => {
+    html += `<div class="stat-group-hdr">${grp.label}</div>`;
+    grp.stats.forEach(def => {
+      const va = sa[def.key];
+      const vb = sb[def.key];
+
+      // Butterfly bar widths (each half max 90px)
+      const maxV = Math.max(Math.abs(va), Math.abs(vb), 0.001);
+      const pctA = (va / maxV) * 90;
+      const pctB = (vb / maxV) * 90;
+
+      // Better badge
+      let badgeA = '', badgeB = '';
+      if (def.better !== 'neutral' && Math.abs(va - vb) > 0.0005) {
+        const aWins = def.better === 'higher' ? va > vb : va < vb;
+        if (aWins) badgeA = '<span class="badge-up">↑</span>';
+        else        badgeB = '<span class="badge-up">↑</span>';
+      }
+
+      html += `
+        <div class="stat-row" title="${def.tip}">
+          <div>
+            <div class="stat-name">${def.name}</div>
+            <div class="stat-desc">${def.desc}</div>
+          </div>
+          <div class="stat-val a">${def.fmt(va)}${badgeA}</div>
+          <div class="bfly">
+            <div class="bfly-half left">
+              <div class="bfly-bar a" style="width:${pctA}px"></div>
+            </div>
+            <div class="bfly-ctr"></div>
+            <div class="bfly-half right">
+              <div class="bfly-bar b" style="width:${pctB}px"></div>
+            </div>
+          </div>
+          <div class="stat-val b">${def.fmt(vb)}${badgeB}</div>
+        </div>
+      `;
+    });
+  });
+
+  body.innerHTML = html;
+}
+
+// ================================================================
+// INIT
+// ================================================================
+function init() {
+  buildRows('a');
+  buildRows('b');
+  refreshTotal('a');
+  refreshTotal('b');
+  renderStats();
+
+  document.getElementById('name-a').addEventListener('input', renderStats);
+  document.getElementById('name-b').addEventListener('input', renderStats);
+}
+
+init();
+</script>
+</body>
+</html>
