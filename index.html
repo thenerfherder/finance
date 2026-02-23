@@ -47,10 +47,14 @@
       z-index: 10;
     }
 
-    .header-left { display: flex; align-items: center; gap: 0.75rem; }
-    .header-icon { font-size: 1.5rem; }
-    .header-title { font-size: 1.1rem; font-weight: 600; }
-    .header-sub   { font-size: 0.72rem; color: var(--muted); margin-top: 1px; }
+    .header-left { display: flex; align-items: center; gap: 1.5rem; }
+    .header-title {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--text);
+    }
     .header-date  { font-size: 0.7rem; color: var(--muted); }
 
     /* ─── Main layout ───────────────────────────────────────── */
@@ -411,11 +415,7 @@
 
 <header>
   <div class="header-left">
-    <span class="header-icon">📊</span>
-    <div>
-      <div class="header-title">Asset Allocation Comparator</div>
-      <div class="header-sub">Blend ETFs · Compare factor exposures · Estimate expected returns</div>
-    </div>
+    <div class="header-title">Asset Allocation Comparator</div>
   </div>
   <div class="header-date">Data · Feb 2026</div>
 </header>
