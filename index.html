@@ -158,8 +158,80 @@
     .etf-row:last-child { border-bottom: none; }
 
     .etf-ticker-col { line-height: 1.3; }
-    .etf-ticker { font-size: 0.875rem; font-weight: 700; }
-    .etf-sub    { font-size: 0.65rem; color: var(--muted); margin-top: 2px; }
+    .etf-ticker {
+      font-size: 0.875rem;
+      font-weight: 700;
+      cursor: pointer;
+      color: var(--text);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--border);
+      display: inline-block;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .etf-ticker:hover { color: var(--blue); border-color: var(--blue); }
+
+    /* ─── ETF Modal ──────────────────────────────────────────── */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    }
+    .modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 1.1rem 1.4rem 0.9rem;
+      border-bottom: 1px solid var(--border);
+      gap: 0.75rem;
+    }
+    .modal-ticker { font-size: 1.3rem; font-weight: 800; }
+    .modal-name   { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .modal-close  {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.2rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      flex-shrink: 0;
+    }
+    .modal-close:hover { color: var(--text); }
+    .modal-desc {
+      padding: 0.9rem 1.4rem;
+      font-size: 0.75rem;
+      color: var(--muted);
+      line-height: 1.65;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 1px;
+      background: var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-stat {
+      background: var(--surface);
+      padding: 0.7rem 1rem;
+      text-align: center;
+    }
+    .modal-stat-val { font-size: 0.92rem; font-weight: 700; font-family: 'SF Mono','Fira Code',monospace; }
+    .modal-stat-lbl { font-size: 0.63rem; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.05em; }
 
     /* Range slider */
     input[type="range"] {
@@ -581,6 +653,21 @@
 
 </main>
 
+<!-- ── ETF Info Modal ───────────────────────────────────────── -->
+<div class="modal-backdrop" id="etf-modal-backdrop" onclick="closeEtfModal(event)">
+  <div class="modal" id="etf-modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-ticker" id="modal-ticker"></div>
+        <div class="modal-name"   id="modal-name"></div>
+      </div>
+      <button class="modal-close" onclick="closeEtfModal()">&times;</button>
+    </div>
+    <div class="modal-desc" id="modal-desc"></div>
+    <div class="modal-stats" id="modal-stats"></div>
+  </div>
+</div>
+
 <footer>
   Asset Allocation Comparator &nbsp;·&nbsp; ETF data approximate as of Feb 2026 &nbsp;·&nbsp; Not investment advice
 </footer>
@@ -708,9 +795,8 @@ function buildRows(p) {
     const row = document.createElement('div');
     row.className = 'etf-row';
     row.innerHTML = `
-      <div class="etf-ticker-col" title="${etf.name}: ${etf.tip}">
-        <div class="etf-ticker">${tk}</div>
-        <div class="etf-sub">${etf.sub}</div>
+      <div class="etf-ticker-col">
+        <span class="etf-ticker" onclick="openEtfModal('${tk}')">${tk}</span>
       </div>
       <input type="range" min="0" max="100" step="1" value="${v}"
         id="sl-${p}-${tk}"
@@ -1103,6 +1189,36 @@ function renderStats() {
 
   body.innerHTML = html;
 }
+
+// ================================================================
+// ETF MODAL
+// ================================================================
+function openEtfModal(tk) {
+  const etf = ETFS[tk];
+  document.getElementById('modal-ticker').textContent = tk;
+  document.getElementById('modal-name').textContent   = etf.name;
+  document.getElementById('modal-desc').textContent   = etf.tip;
+  document.getElementById('modal-stats').innerHTML = [
+    { val: etf.pe.toFixed(1) + 'x',   lbl: 'P/E Ratio'   },
+    { val: etf.pb.toFixed(2) + 'x',   lbl: 'P/B Ratio'   },
+    { val: (100/etf.pe).toFixed(2)+'%', lbl: 'Earn. Yield' },
+    { val: etf.smb.toFixed(2),         lbl: 'SMB'         },
+    { val: etf.hml.toFixed(2),         lbl: 'HML'         },
+    { val: etf.intlPct + '%',          lbl: "Int'l %"     },
+    { val: etf.scPct + '%',            lbl: 'Small-Cap'   },
+    { val: etf.er.toFixed(3) + '%',    lbl: 'Exp. Ratio'  },
+  ].map(s => `<div class="modal-stat"><div class="modal-stat-val">${s.val}</div><div class="modal-stat-lbl">${s.lbl}</div></div>`).join('');
+  document.getElementById('etf-modal-backdrop').classList.add('open');
+}
+
+function closeEtfModal(e) {
+  if (e && e.target !== document.getElementById('etf-modal-backdrop')) return;
+  document.getElementById('etf-modal-backdrop').classList.remove('open');
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') document.getElementById('etf-modal-backdrop').classList.remove('open');
+});
 
 // ================================================================
 // INIT
