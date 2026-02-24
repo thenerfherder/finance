@@ -409,6 +409,16 @@
 
     /* ─── Tooltip ───────────────────────────────────────────── */
     [title] { cursor: help; }
+
+    /* ─── Radar chart ───────────────────────────────────────── */
+    .radar-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .radar-body { padding: 1.5rem 1rem; }
   </style>
 </head>
 <body>
@@ -489,6 +499,27 @@
     </div>
 
   </div><!-- /portfolio-grid -->
+
+  <!-- ── Factor Radar ──────────────────────────────────────────── -->
+  <div class="section-label">Factor Profile</div>
+  <div class="radar-card">
+    <div class="stats-card-header">
+      <span class="stats-card-title">Factor Radar</span>
+      <div class="legend">
+        <div class="leg-item">
+          <div class="leg-dot" style="background:var(--a-color)"></div>
+          <span id="radar-leg-a">Portfolio A</span>
+        </div>
+        <div class="leg-item">
+          <div class="leg-dot" style="background:var(--b-color)"></div>
+          <span id="radar-leg-b">Portfolio B</span>
+        </div>
+      </div>
+    </div>
+    <div class="radar-body">
+      <svg id="radar-svg" viewBox="0 0 430 350" width="100%" style="max-width:430px;display:block;margin:0 auto"></svg>
+    </div>
+  </div>
 
   <!-- ── Stats comparison ─────────────────────────────────────── -->
   <div class="section-label">Comparison</div>
@@ -891,9 +922,106 @@ const STAT_GROUPS = [
 ];
 
 // ================================================================
+// RENDER RADAR CHART
+// ================================================================
+function renderRadar() {
+  const sa = calcStats('a');
+  const sb = calcStats('b');
+
+  const nameA = document.getElementById('name-a').value.trim() || 'Portfolio A';
+  const nameB = document.getElementById('name-b').value.trim() || 'Portfolio B';
+  document.getElementById('radar-leg-a').textContent = nameA;
+  document.getElementById('radar-leg-b').textContent = nameB;
+
+  const svg = document.getElementById('radar-svg');
+  if (!svg) return;
+
+  if (!sa && !sb) {
+    svg.innerHTML = `<text x="215" y="175" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="var(--muted)">Set allocations above to see chart.</text>`;
+    return;
+  }
+
+  const cx = 213, cy = 175, R = 120;
+  const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
+
+  // Axes: top=Earnings Yield, right=Int'l %, bottom=Size SMB, left=Value HML
+  const AXES = [
+    { key: 'earningsYield', label: 'Earnings Yield', max: 9.0,  angle: -Math.PI / 2 },
+    { key: 'intlPct',       label: "Int'l %",         max: 100,  angle: 0 },
+    { key: 'smb',           label: 'Size (SMB)',       max: 1.0,  angle: Math.PI / 2 },
+    { key: 'hml',           label: 'Value (HML)',      max: 0.65, angle: Math.PI },
+  ];
+
+  const RINGS = [0.25, 0.5, 0.75, 1.0];
+
+  function pt(angle, frac) {
+    return [cx + frac * R * Math.cos(angle), cy + frac * R * Math.sin(angle)];
+  }
+
+  function labelStyle(angle) {
+    const EPS = 0.01;
+    if (Math.abs(angle) < EPS)                          return { anchor: 'start',  baseline: 'middle' };
+    if (Math.abs(Math.abs(angle) - Math.PI) < EPS)     return { anchor: 'end',    baseline: 'middle' };
+    if (angle < 0)                                       return { anchor: 'middle', baseline: 'auto' };
+    return                                                      { anchor: 'middle', baseline: 'hanging' };
+  }
+
+  let s = '';
+
+  // Grid rings
+  RINGS.forEach((f, i) => {
+    const pts = AXES.map(a => pt(a.angle, f).map(v => v.toFixed(1)).join(',')).join(' ');
+    const outer = i === RINGS.length - 1;
+    s += `<polygon points="${pts}" fill="${outer ? 'rgba(255,255,255,0.02)' : 'none'}" stroke="var(--border)" stroke-width="${outer ? 1.5 : 1}" opacity="${outer ? 0.9 : 0.4}"/>`;
+  });
+
+  // Axis lines
+  AXES.forEach(ax => {
+    const [x, y] = pt(ax.angle, 1);
+    s += `<line x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="var(--border)" stroke-width="1" opacity="0.6"/>`;
+  });
+
+  // Center dot
+  s += `<circle cx="${cx}" cy="${cy}" r="2" fill="var(--border)" opacity="0.5"/>`;
+
+  // Portfolio polygon
+  function drawPortfolio(stats, color) {
+    if (!stats) return '';
+    const pts = AXES.map(ax => {
+      const frac = Math.min(Math.max((stats[ax.key] ?? 0) / ax.max, 0), 1);
+      return pt(ax.angle, frac).map(v => v.toFixed(1)).join(',');
+    }).join(' ');
+    let out = `<polygon points="${pts}" fill="${color}" fill-opacity="0.12" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    AXES.forEach(ax => {
+      const frac = Math.min(Math.max((stats[ax.key] ?? 0) / ax.max, 0), 1);
+      const [dx, dy] = pt(ax.angle, frac);
+      out += `<circle cx="${dx.toFixed(1)}" cy="${dy.toFixed(1)}" r="4" fill="${color}" stroke="var(--bg)" stroke-width="1.5"/>`;
+    });
+    return out;
+  }
+
+  // Draw B first so A renders on top
+  s += drawPortfolio(sb, 'var(--b-color)');
+  s += drawPortfolio(sa, 'var(--a-color)');
+
+  // Axis labels
+  const GAP = 18;
+  AXES.forEach(ax => {
+    const lx = cx + (R + GAP) * Math.cos(ax.angle);
+    const ly = cy + (R + GAP) * Math.sin(ax.angle);
+    const { anchor, baseline } = labelStyle(ax.angle);
+    s += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${anchor}" dominant-baseline="${baseline}" font-size="10.5" fill="var(--muted)" font-family="${FONT}">${ax.label}</text>`;
+  });
+
+  svg.innerHTML = s;
+}
+
+// ================================================================
 // RENDER STATS
 // ================================================================
 function renderStats() {
+  renderRadar();
+
   const sa = calcStats('a');
   const sb = calcStats('b');
 
