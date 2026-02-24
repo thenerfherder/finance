@@ -966,19 +966,16 @@ const STAT_GROUPS = [
         fmt:    v => v.toFixed(2),
         better: 'neutral',
       },
+    ],
+  },
+  {
+    label: 'Geographic Exposure',
+    stats: [
       {
         key:    'intlPct',
         name:   'International Allocation',
         desc:   'Weighted % in ex-US markets',
         tip:    'Percentage of portfolio in non-US markets (developed + emerging). VXUS = 97%, VTI = 0%.',
-        fmt:    v => v.toFixed(1) + '%',
-        better: 'neutral',
-      },
-      {
-        key:    'scPct',
-        name:   'Small-Cap Exposure',
-        desc:   'Est. % in small-cap stocks',
-        tip:    'Estimated percentage allocated to small-capitalization equities.',
         fmt:    v => v.toFixed(1) + '%',
         better: 'neutral',
       },
