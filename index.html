@@ -372,19 +372,38 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 1.25rem 1.5rem;
       margin-top: 1.5rem;
     }
-    .method-card h3 {
+    .method-card summary {
       font-size: 0.82rem;
       font-weight: 600;
-      margin-bottom: 0.6rem;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+    }
+    .method-card summary::-webkit-details-marker { display: none; }
+    .method-card summary::before {
+      content: '▶';
+      font-size: 0.6rem;
+      color: var(--muted);
+      transition: transform 0.2s;
+    }
+    .method-card[open] summary::before { transform: rotate(90deg); }
+    .method-card summary:hover { color: var(--blue); }
+    .method-card-body {
+      padding: 0 1.5rem 1.25rem;
+      border-top: 1px solid var(--border);
     }
     .method-card p, .method-card li {
       font-size: 0.75rem;
       color: var(--muted);
       line-height: 1.65;
     }
+    .method-card p { margin-top: 0.75rem; }
     .method-card ul { padding-left: 1.2rem; margin-top: 0.4rem; }
     .method-card li { margin-bottom: 0.2rem; }
     .method-card strong { color: var(--text); font-weight: 600; }
@@ -543,20 +562,22 @@
   </div>
 
   <!-- ── Methodology ──────────────────────────────────────────── -->
-  <div class="method-card">
-    <h3>Methodology &amp; Data Notes</h3>
-    <p>ETF characteristics are approximate values sourced from Vanguard and Avantis fund data as of February 2026.
-       All metrics are estimates and should not be used as the sole basis for investment decisions.</p>
-    <ul>
-      <li><strong>P/E Ratio:</strong> Blended using the harmonic mean (weighted average of earnings yields), which prevents distortion from high-P/E outliers and correctly reflects the aggregate earnings yield of the portfolio.</li>
-      <li><strong>Earnings Yield:</strong> 1/PE × 100%. A commonly used simplified proxy for expected real returns over the long run.</li>
-      <li><strong>Value Tilt (HML):</strong> Fama-French High-Minus-Low factor loading. 0 ≈ market-cap blend; higher = more tilted toward value stocks.</li>
-      <li><strong>Size Tilt (SMB):</strong> Fama-French Small-Minus-Big factor loading. 0 ≈ large-cap weighted; higher = more tilted toward small-cap stocks.</li>
-      <li><strong>Factor Model Return Estimate:</strong> = 4.0% (risk-free) + 4.5% (equity market premium) + HML × 3.5% (value premium) + SMB × 2.5% (size premium). Based on historical Fama-French factor research. Factor premiums are not guaranteed to persist in the future.</li>
-      <li><strong>Expense Ratio:</strong> Weighted average annual fund cost. Excluded from return estimates — subtract from any return figure for net expected return.</li>
-      <li><strong>This tool is for educational and illustrative purposes only. Not investment advice.</strong></li>
-    </ul>
-  </div>
+  <details class="method-card">
+    <summary>Methodology &amp; Data Notes</summary>
+    <div class="method-card-body">
+      <p>ETF characteristics are approximate values sourced from Vanguard and Avantis fund data as of February 2026.
+         All metrics are estimates and should not be used as the sole basis for investment decisions.</p>
+      <ul>
+        <li><strong>P/E Ratio:</strong> Blended using the harmonic mean (weighted average of earnings yields), which prevents distortion from high-P/E outliers and correctly reflects the aggregate earnings yield of the portfolio.</li>
+        <li><strong>Earnings Yield:</strong> 1/PE × 100%. A commonly used simplified proxy for expected real returns over the long run.</li>
+        <li><strong>Value Tilt (HML):</strong> Fama-French High-Minus-Low factor loading. 0 ≈ market-cap blend; higher = more tilted toward value stocks.</li>
+        <li><strong>Size Tilt (SMB):</strong> Fama-French Small-Minus-Big factor loading. 0 ≈ large-cap weighted; higher = more tilted toward small-cap stocks.</li>
+        <li><strong>Factor Model Return Estimate:</strong> = 4.0% (risk-free) + 4.5% (equity market premium) + HML × 3.5% (value premium) + SMB × 2.5% (size premium). Based on historical Fama-French factor research. Factor premiums are not guaranteed to persist in the future.</li>
+        <li><strong>Expense Ratio:</strong> Weighted average annual fund cost. Excluded from return estimates — subtract from any return figure for net expected return.</li>
+        <li><strong>This tool is for educational and illustrative purposes only. Not investment advice.</strong></li>
+      </ul>
+    </div>
+  </details>
 
 </main>
 
