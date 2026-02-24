@@ -917,9 +917,11 @@ function calcStats(p) {
 
   const pe            = 1 / eySum;
   const earningsYield = eySum * 100;          // %
-  const factorReturn  = RF + MKT + hml * VPREM + smb * SPREM; // nominal %
+  const factorReturn    = RF + MKT + hml * VPREM + smb * SPREM; // nominal %
+  const factorReturnNet = factorReturn - er;
+  const earningsYieldNet = earningsYield - er;
 
-  return { pe, pb, earningsYield, intlPct, scPct, smb, hml, er, factorReturn, total };
+  return { pe, pb, earningsYield, earningsYieldNet, intlPct, scPct, smb, hml, er, factorReturn, factorReturnNet, total };
 }
 
 // ================================================================
@@ -985,18 +987,18 @@ const STAT_GROUPS = [
     label: 'Expected Return Estimates (Model)',
     stats: [
       {
-        key:    'factorReturn',
+        key:    'factorReturnNet',
         name:   'Factor Model Return',
-        desc:   `${RF}% RF + ${MKT}% MKT + HML×${VPREM}% + SMB×${SPREM}%`,
-        tip:    `Nominal expected return from Fama-French model. RF=${RF}%, Market premium=${MKT}%, Value premium=${VPREM}%/unit HML, Size premium=${SPREM}%/unit SMB. Historical — not guaranteed.`,
+        desc:   `${RF}% RF + ${MKT}% MKT + HML×${VPREM}% + SMB×${SPREM}% − ER`,
+        tip:    `Fama-French model return net of fees. RF=${RF}%, Market premium=${MKT}%, Value premium=${VPREM}%/unit HML, Size premium=${SPREM}%/unit SMB, minus blended expense ratio. Historical — not guaranteed.`,
         fmt:    v => v.toFixed(2) + '%',
         better: 'higher',
       },
       {
-        key:    'earningsYield',
-        name:   'Earnings Yield (Return Proxy)',
-        desc:   'Simplified expected real return estimate',
-        tip:    'Earnings yield as a rough long-run real return proxy. Does not account for growth expectations or factor premiums.',
+        key:    'earningsYieldNet',
+        name:   'Earnings Yield',
+        desc:   'Earnings yield minus expense ratio',
+        tip:    'Earnings yield (1/PE × 100%) after subtracting the blended expense ratio. Rough long-run real return proxy.',
         fmt:    v => v.toFixed(2) + '%',
         better: 'higher',
       },
