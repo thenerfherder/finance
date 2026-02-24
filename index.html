@@ -757,30 +757,43 @@ const ETFS = {
     er:      0.36,
     tip:     'Actively managed international small cap value. ~2,400 holdings across developed markets ex-US. Strong SMB (0.90) and HML (0.50) loadings. Complements AVUV for a global SCV allocation.',
   },
+  VT: {
+    ticker:  'VT',
+    name:    'Vanguard Total World Stock ETF',
+    sub:     'Global Total Market',
+    pe:      21.3,
+    pb:      3.28,
+    intlPct: 40,
+    scPct:   8,
+    smb:     0.05,
+    hml:     0.04,
+    er:      0.07,
+    tip:     'Market-cap weighted index covering ~9,500 stocks across 50+ countries. ~60% US, ~40% international (developed + emerging). No factor tilt. Single-fund global diversification.',
+  },
 };
 
-const TICKERS = ['VTI', 'VXUS', 'AVGE', 'AVGV', 'AVUV', 'AVDV'];
+const TICKERS = ['VTI', 'VXUS', 'VT', 'AVGE', 'AVGV', 'AVUV', 'AVDV'];
 
 // ================================================================
 // PRESETS
 // ================================================================
 const PRESETS = {
-  '2fund':        { VTI:60, VXUS:40, AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
-  'us_only':      { VTI:100,VXUS:0,  AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
-  'intl_only':    { VTI:0,  VXUS:100,AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
-  '3fund':        { VTI:50, VXUS:30, AVGE:0,  AVGV:0,  AVUV:20, AVDV:0  },
-  'avantis_core': { VTI:0,  VXUS:0,  AVGE:60, AVGV:0,  AVUV:40, AVDV:0  },
-  'factor_tilt':  { VTI:0,  VXUS:20, AVGE:20, AVGV:0,  AVUV:40, AVDV:20 },
-  'deep_value':   { VTI:0,  VXUS:0,  AVGE:0,  AVGV:50, AVUV:50, AVDV:0  },
-  'all_avantis':  { VTI:0,  VXUS:0,  AVGE:40, AVGV:30, AVUV:20, AVDV:10 },
+  '2fund':        { VTI:60, VXUS:40, VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
+  'us_only':      { VTI:100,VXUS:0,  VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
+  'intl_only':    { VTI:0,  VXUS:100,VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
+  '3fund':        { VTI:50, VXUS:30, VT:0,   AVGE:0,  AVGV:0,  AVUV:20, AVDV:0  },
+  'avantis_core': { VTI:0,  VXUS:0,  VT:0,   AVGE:60, AVGV:0,  AVUV:40, AVDV:0  },
+  'factor_tilt':  { VTI:0,  VXUS:20, VT:0,   AVGE:20, AVGV:0,  AVUV:40, AVDV:20 },
+  'deep_value':   { VTI:0,  VXUS:0,  VT:0,   AVGE:0,  AVGV:50, AVUV:50, AVDV:0  },
+  'all_avantis':  { VTI:0,  VXUS:0,  VT:0,   AVGE:40, AVGV:30, AVUV:20, AVDV:10 },
 };
 
 // ================================================================
 // STATE — default portfolios give a useful starting comparison
 // ================================================================
 const state = {
-  a: { VTI:51, VXUS:23, AVGE:0,  AVGV:0,  AVUV:18, AVDV:8  },
-  b: { VTI:0,  VXUS:20, AVGE:20, AVGV:0,  AVUV:40, AVDV:20 },
+  a: { VTI:51, VXUS:23, VT:0, AVGE:0,  AVGV:0,  AVUV:18, AVDV:8  },
+  b: { VTI:0,  VXUS:0,  VT:0, AVGE:100,AVGV:0,  AVUV:0,  AVDV:0  },
 };
 
 // ================================================================
