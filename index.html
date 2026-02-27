@@ -1472,12 +1472,14 @@ async function fetchTeyYields() {
 
   const results = await Promise.allSettled(
     TEY_FUNDS.map(async (f, i) => {
-      const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${f.ticker}?modules=summaryDetail`;
+      const target = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${f.ticker}?modules=summaryDetail`;
+      const url = `https://corsproxy.io/?url=${encodeURIComponent(target)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      const raw = data?.quoteSummary?.result?.[0]?.summaryDetail?.yield?.raw;
-      if (raw == null) throw new Error('no yield field');
+      const sd = data?.quoteSummary?.result?.[0]?.summaryDetail;
+      const raw = sd?.yield?.raw ?? sd?.trailingAnnualDividendYield?.raw;
+      if (raw == null) throw new Error(`no yield field for ${f.ticker}`);
       TEY_FUNDS[i].yield = +(raw * 100).toFixed(2);
     })
   );
