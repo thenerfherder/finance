@@ -1473,7 +1473,7 @@ async function fetchTeyYields() {
   const results = await Promise.allSettled(
     TEY_FUNDS.map(async (f, i) => {
       const target = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${f.ticker}?modules=summaryDetail`;
-      const url = `https://corsproxy.io/?url=${encodeURIComponent(target)}`;
+      const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
