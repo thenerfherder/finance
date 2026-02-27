@@ -1470,37 +1470,32 @@ async function fetchTeyYields() {
   status.textContent = '';
   status.className = 'tey-yield-status';
 
-  const results = await Promise.allSettled(
-    TEY_FUNDS.map(async (f, i) => {
-      const target = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${f.ticker}?modules=summaryDetail`;
-      const url = `https://api.allorigins.win/raw?url=${encodeURIComponent(target)}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      const sd = data?.quoteSummary?.result?.[0]?.summaryDetail;
-      const raw = sd?.yield?.raw ?? sd?.trailingAnnualDividendYield?.raw;
-      if (raw == null) throw new Error(`no yield field for ${f.ticker}`);
-      TEY_FUNDS[i].yield = +(raw * 100).toFixed(2);
-    })
-  );
+  try {
+    const res = await fetch('./yields.json');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
 
-  buildTeyFundCards();
-  renderTeyTable();
+    TEY_FUNDS.forEach(f => {
+      if (data.yields?.[f.ticker] != null) f.yield = data.yields[f.ticker];
+    });
+
+    buildTeyFundCards();
+    renderTeyTable();
+
+    const d = new Date(data.updated);
+    const age = Math.round((Date.now() - d) / 86400000);
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const ageNote = age === 0 ? 'today' : age === 1 ? 'yesterday' : `${age}d ago`;
+    status.textContent = `● ${dateStr} (${ageNote})${data.partial ? ' · partial' : ''}`;
+    status.className = 'tey-yield-status live';
+  } catch (e) {
+    status.textContent = '⚠ Could not load yields';
+    status.className = 'tey-yield-status warn';
+  }
+
   btn.disabled = false;
   btn.textContent = '↻ Refresh yields';
   teyFetchDone = true;
-
-  const failed = results.filter(r => r.status === 'rejected').length;
-  if (failed === 0) {
-    status.textContent = '● Live';
-    status.className = 'tey-yield-status live';
-  } else if (failed < TEY_FUNDS.length) {
-    status.textContent = `⚠ ${TEY_FUNDS.length - failed}/${TEY_FUNDS.length} updated`;
-    status.className = 'tey-yield-status warn';
-  } else {
-    status.textContent = '⚠ Using defaults';
-    status.className = 'tey-yield-status warn';
-  }
 }
 
 // ================================================================
