@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Asset Allocation Comparator</title>
+  <title>Finance Toolkit</title>
   <style>
     /* ─── Reset & Variables ─────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -510,18 +510,166 @@
       margin-bottom: 1.5rem;
     }
     .radar-body { padding: 1.5rem 1rem; }
+
+    /* ─── Tab Navigation ────────────────────────────────────── */
+    .tab-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      display: flex;
+      gap: 0;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      font-family: inherit;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      padding: 0.7rem 1rem;
+      margin-bottom: -1px;
+      cursor: pointer;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover  { color: var(--text); }
+    .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+    .tab-panel          { display: none; }
+    .tab-panel.active   { display: block; }
+
+    /* ─── TEY – Fund Cards ──────────────────────────────────── */
+    .section-label-note { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 0.68rem; }
+    .tey-fund-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .tey-fund-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem 0.9rem;
+    }
+    .tey-fund-ticker { font-size: 1rem; font-weight: 800; }
+    .tey-fund-name   { font-size: 0.63rem; color: var(--muted); margin: 3px 0 0.6rem; line-height: 1.4; }
+    .tey-badge {
+      display: inline-block;
+      font-size: 0.58rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 6px;
+      border-radius: 3px;
+      margin-bottom: 0.7rem;
+    }
+    .tey-badge.exempt  { background: rgba(63,185,80,0.15);  color: var(--green); border: 1px solid rgba(63,185,80,0.3);  }
+    .tey-badge.taxable { background: rgba(248,81,73,0.10);  color: var(--red);   border: 1px solid rgba(248,81,73,0.25); }
+    .tey-yield-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.3rem;
+    }
+    .tey-yield-lbl { font-size: 0.68rem; color: var(--muted); }
+    .tey-yield-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.82rem;
+      font-weight: 700;
+      padding: 0.2rem 0.4rem;
+      border-radius: 4px;
+      width: 68px;
+      text-align: right;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+    .tey-yield-input::-webkit-inner-spin-button,
+    .tey-yield-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .tey-yield-input:focus { outline: none; border-color: var(--blue); }
+    .tey-er-line { font-size: 0.63rem; color: var(--muted); margin-top: 0.25rem; }
+
+    /* ─── TEY – Fund Groups ─────────────────────────────────── */
+    .tey-fund-group { margin-bottom: 1.25rem; }
+    .tey-fund-group-lbl {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+
+    /* ─── TEY – Comparison Table ────────────────────────────── */
+    .tey-table-wrap { overflow-x: auto; }
+    .tey-table { width: 100%; border-collapse: collapse; }
+    .tey-table th {
+      padding: 0.65rem 1.1rem;
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      text-align: right;
+    }
+    .tey-table th:first-child { text-align: left; }
+    .tey-table th .th-badge {
+      display: block;
+      font-size: 0.55rem;
+      font-weight: 700;
+      margin-top: 2px;
+      letter-spacing: 0.05em;
+    }
+    .tey-table th .th-badge.exempt  { color: var(--green); }
+    .tey-table th .th-badge.taxable { color: var(--red); }
+    .tey-table th.th-group {
+      text-align: center;
+      font-size: 0.63rem;
+      border-right: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .tey-table th.th-group:last-child { border-right: none; }
+    .tey-table td.col-group-end { border-right: 1px solid var(--border); }
+    .tey-table td {
+      padding: 0.7rem 1.1rem;
+      border-bottom: 1px solid var(--border);
+      text-align: right;
+      vertical-align: middle;
+    }
+    .tey-table tr:last-child td { border-bottom: none; }
+    .tey-table td:first-child { text-align: left; }
+    .tey-brkt-rate   { font-size: 0.85rem; font-weight: 700; }
+    .tey-brkt-income { font-size: 0.63rem; color: var(--muted); margin-top: 2px; }
+    .tey-val  { font-family: 'SF Mono','Fira Code',monospace; font-size: 0.85rem; font-weight: 700; }
+    .tey-sub  { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
+    .tey-table tr.tey-row-winner td { background: rgba(63,185,80,0.0); }
+    .tey-cell-winner .tey-val { color: var(--green); }
   </style>
 </head>
 <body>
 
 <header>
   <div class="header-left">
-    <div class="header-title">Asset Allocation Comparator</div>
+    <div class="header-title">Finance Toolkit</div>
   </div>
   <div class="header-date">Data · Feb 2026</div>
 </header>
 
+<nav class="tab-bar">
+  <button class="tab-btn active" data-tab="allocation">Asset Allocation</button>
+  <button class="tab-btn"        data-tab="tey">Tax Equivalent Yield</button>
+</nav>
+
 <main>
+
+<div id="tab-allocation" class="tab-panel active">
 
   <!-- ── Portfolios ───────────────────────────────────────────── -->
   <div class="section-label">Portfolios</div>
@@ -650,6 +798,38 @@
       </ul>
     </div>
   </details>
+
+</div><!-- /tab-allocation -->
+
+<div id="tab-tey" class="tab-panel">
+
+  <!-- ── Bond Funds ───────────────────────────────────────────── -->
+  <div class="section-label">Funds <span class="section-label-note">— edit yields to reflect current values</span></div>
+  <div id="tey-funds-container"></div>
+
+  <!-- ── Comparison Table ─────────────────────────────────────── -->
+  <div class="section-label">After-Tax Yield by Federal Tax Bracket</div>
+  <div class="stats-card">
+    <div class="tey-table-wrap" id="tey-table"></div>
+  </div>
+
+  <!-- ── Methodology ──────────────────────────────────────────── -->
+  <details class="method-card">
+    <summary>Methodology &amp; Notes</summary>
+    <div class="method-card-body">
+      <p>Compares the after-tax yield of tax-exempt municipal bond funds against taxable bond funds across federal income tax brackets.</p>
+      <ul>
+        <li><strong>Tax-Exempt funds (munis):</strong> Interest is exempt from federal income tax. After-tax yield equals the stated yield regardless of bracket.</li>
+        <li><strong>Taxable funds:</strong> After-tax yield = stated yield × (1 − marginal rate). Higher brackets erode more of the yield.</li>
+        <li><strong>Tax Equivalent Yield (TEY):</strong> The taxable yield needed to match a muni's after-tax yield. TEY = muni yield ÷ (1 − rate). Shown in gray beneath muni values.</li>
+        <li><strong>Winner:</strong> The fund with the highest after-tax yield for that bracket is highlighted green.</li>
+        <li><strong>State taxes:</strong> Most muni funds are also exempt from state taxes in the issuing state, making them even more attractive in high-tax states. Not modelled here.</li>
+        <li><strong>Yields change frequently.</strong> Update the SEC yields above to reflect current data before drawing conclusions.</li>
+      </ul>
+    </div>
+  </details>
+
+</div><!-- /tab-tey -->
 
 </main>
 
@@ -1215,6 +1395,145 @@ document.addEventListener('keydown', e => {
 });
 
 // ================================================================
+// TAB SWITCHING
+// ================================================================
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ================================================================
+// TAX EQUIVALENT YIELD TOOL
+// ================================================================
+const TEY_FUNDS = [
+  { ticker: 'VTEB',  name: 'Vanguard Tax-Exempt Bond ETF',        yield: 3.80, taxExempt: true,  er: 0.05, category: 'etf' },
+  { ticker: 'BND',   name: 'Vanguard Total Bond Market ETF',       yield: 4.80, taxExempt: false, er: 0.03, category: 'etf' },
+  { ticker: 'VMSXX', name: 'Vanguard Municipal Money Market Fund', yield: 2.90, taxExempt: true,  er: 0.15, category: 'mmf' },
+  { ticker: 'VMFXX', name: 'Vanguard Federal Money Market Fund',   yield: 4.28, taxExempt: false, er: 0.11, category: 'mmf' },
+];
+
+const TEY_BRACKETS = [
+  { rate: 10, label: '10%', income: 'Up to $23,200 MFJ'         },
+  { rate: 12, label: '12%', income: '$23,201 – $94,300 MFJ'     },
+  { rate: 22, label: '22%', income: '$94,301 – $201,050 MFJ'    },
+  { rate: 24, label: '24%', income: '$201,051 – $383,900 MFJ'   },
+  { rate: 32, label: '32%', income: '$383,901 – $487,450 MFJ'   },
+  { rate: 35, label: '35%', income: '$487,451 – $731,200 MFJ'   },
+  { rate: 37, label: '37%', income: 'Over $731,200 MFJ'         },
+];
+
+function buildTeyFundCards() {
+  const container = document.getElementById('tey-funds-container');
+  container.innerHTML = '';
+
+  const groups = [
+    { key: 'etf', label: 'Bond ETFs' },
+    { key: 'mmf', label: 'Money Market Funds' },
+  ];
+
+  groups.forEach(grp => {
+    const funds = TEY_FUNDS.filter(f => f.category === grp.key);
+    const group = document.createElement('div');
+    group.className = 'tey-fund-group';
+    group.innerHTML = `<div class="tey-fund-group-lbl">${grp.label}</div>`;
+
+    const grid = document.createElement('div');
+    grid.className = 'tey-fund-grid';
+
+    funds.forEach(f => {
+      const i = TEY_FUNDS.indexOf(f);
+      const badgeCls = f.taxExempt ? 'exempt' : 'taxable';
+      const badgeTxt = f.taxExempt ? 'Tax-Exempt' : 'Taxable';
+      const yieldLbl = grp.key === 'mmf' ? '7-Day Yield' : 'SEC Yield';
+      const card = document.createElement('div');
+      card.className = 'tey-fund-card';
+      card.innerHTML = `
+        <div class="tey-fund-ticker">${f.ticker}</div>
+        <div class="tey-fund-name">${f.name}</div>
+        <div class="tey-badge ${badgeCls}">${badgeTxt}</div>
+        <div class="tey-yield-row">
+          <span class="tey-yield-lbl">${yieldLbl}</span>
+          <input class="tey-yield-input" type="number" min="0" max="20" step="0.01"
+            value="${f.yield.toFixed(2)}"
+            oninput="onTeyYield(${i}, this.value)">
+        </div>
+        <div class="tey-er-line">ER: ${f.er.toFixed(2)}%</div>
+      `;
+      grid.appendChild(card);
+    });
+
+    group.appendChild(grid);
+    container.appendChild(group);
+  });
+}
+
+function onTeyYield(i, raw) {
+  const v = Math.max(0, Math.min(20, parseFloat(raw) || 0));
+  TEY_FUNDS[i].yield = v;
+  renderTeyTable();
+}
+
+function renderTeyTable() {
+  const wrap = document.getElementById('tey-table');
+
+  // Header — two rows: group labels, then fund columns
+  const etfFunds = TEY_FUNDS.filter(f => f.category === 'etf');
+  const mmfFunds = TEY_FUNDS.filter(f => f.category === 'mmf');
+
+  let html = '<table class="tey-table"><thead>';
+  html += '<tr>';
+  html += '<th rowspan="2">Federal Bracket</th>';
+  html += `<th colspan="${etfFunds.length}" class="th-group">Bond ETFs</th>`;
+  html += `<th colspan="${mmfFunds.length}" class="th-group">Money Market Funds</th>`;
+  html += '</tr><tr>';
+  TEY_FUNDS.forEach(f => {
+    const badgeCls = f.taxExempt ? 'exempt' : 'taxable';
+    const badgeTxt = f.taxExempt ? 'Tax-Exempt' : 'Taxable';
+    html += `<th>${f.ticker}<span class="th-badge ${badgeCls}">${badgeTxt} · ${f.yield.toFixed(2)}%</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  // Rows
+  TEY_BRACKETS.forEach(brkt => {
+    const rate = brkt.rate / 100;
+
+    // Compute after-tax yield for each fund
+    const afterTax = TEY_FUNDS.map(f =>
+      f.taxExempt ? f.yield : f.yield * (1 - rate)
+    );
+
+    const maxVal  = Math.max(...afterTax);
+    const winnerI = afterTax.indexOf(maxVal);
+
+    html += '<tr>';
+    html += `<td><div class="tey-brkt-rate">${brkt.label}</div><div class="tey-brkt-income">${brkt.income}</div></td>`;
+
+    TEY_FUNDS.forEach((f, i) => {
+      const at        = afterTax[i];
+      const isW       = i === winnerI;
+      const isLastEtf = f.category === 'etf' && (TEY_FUNDS[i + 1]?.category === 'mmf');
+      const tey = f.taxExempt ? (f.yield / (1 - rate)) : null;
+      const sub = f.taxExempt
+        ? `<div class="tey-sub">TEY: ${tey.toFixed(2)}%</div>`
+        : `<div class="tey-sub">after ${brkt.label} tax</div>`;
+      const cls = [isW ? 'tey-cell-winner' : '', isLastEtf ? 'col-group-end' : ''].join(' ').trim();
+      html += `<td class="${cls}">
+        <div class="tey-val">${at.toFixed(2)}%</div>${sub}
+      </td>`;
+    });
+
+    html += '</tr>';
+  });
+
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// ================================================================
 // INIT
 // ================================================================
 function init() {
@@ -1226,6 +1545,9 @@ function init() {
 
   document.getElementById('name-a').addEventListener('input', renderStats);
   document.getElementById('name-b').addEventListener('input', renderStats);
+
+  buildTeyFundCards();
+  renderTeyTable();
 }
 
 init();
