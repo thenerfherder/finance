@@ -542,6 +542,31 @@
 
     /* ─── TEY – Fund Cards ──────────────────────────────────── */
     .section-label-note { font-weight: 400; text-transform: none; letter-spacing: 0; font-size: 0.68rem; }
+    .tey-refresh-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 1px 7px;
+      margin-left: 0.6rem;
+      vertical-align: middle;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tey-refresh-btn:hover:not(:disabled) { color: var(--blue); border-color: var(--blue); }
+    .tey-refresh-btn:disabled { opacity: 0.5; cursor: default; }
+    .tey-yield-status {
+      font-size: 0.65rem;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--muted);
+      margin-left: 0.5rem;
+    }
+    .tey-yield-status.live  { color: var(--green); }
+    .tey-yield-status.warn  { color: var(--yellow); }
     .tey-fund-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -814,7 +839,11 @@
 <div id="tab-tey" class="tab-panel">
 
   <!-- ── Bond Funds ───────────────────────────────────────────── -->
-  <div class="section-label">Funds <span class="section-label-note">— edit yields to reflect current values</span></div>
+  <div class="section-label">
+    Funds
+    <button class="tey-refresh-btn" id="tey-refresh-btn" onclick="fetchTeyYields()">↻ Refresh yields</button>
+    <span class="tey-yield-status" id="tey-yield-status"></span>
+  </div>
   <div id="tey-funds-container"></div>
 
   <!-- ── Comparison Table ─────────────────────────────────────── -->
@@ -1421,14 +1450,56 @@ function openTeyModal(i) {
 // ================================================================
 // TAB SWITCHING
 // ================================================================
+let teyFetchDone = false;
+
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'tey' && !teyFetchDone) fetchTeyYields();
   });
 });
+
+async function fetchTeyYields() {
+  const btn    = document.getElementById('tey-refresh-btn');
+  const status = document.getElementById('tey-yield-status');
+  btn.disabled = true;
+  btn.textContent = '↻ Fetching…';
+  status.textContent = '';
+  status.className = 'tey-yield-status';
+
+  const results = await Promise.allSettled(
+    TEY_FUNDS.map(async (f, i) => {
+      const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${f.ticker}?modules=summaryDetail`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      const raw = data?.quoteSummary?.result?.[0]?.summaryDetail?.yield?.raw;
+      if (raw == null) throw new Error('no yield field');
+      TEY_FUNDS[i].yield = +(raw * 100).toFixed(2);
+    })
+  );
+
+  buildTeyFundCards();
+  renderTeyTable();
+  btn.disabled = false;
+  btn.textContent = '↻ Refresh yields';
+  teyFetchDone = true;
+
+  const failed = results.filter(r => r.status === 'rejected').length;
+  if (failed === 0) {
+    status.textContent = '● Live';
+    status.className = 'tey-yield-status live';
+  } else if (failed < TEY_FUNDS.length) {
+    status.textContent = `⚠ ${TEY_FUNDS.length - failed}/${TEY_FUNDS.length} updated`;
+    status.className = 'tey-yield-status warn';
+  } else {
+    status.textContent = '⚠ Using defaults';
+    status.className = 'tey-yield-status warn';
+  }
+}
 
 // ================================================================
 // TAX EQUIVALENT YIELD TOOL
