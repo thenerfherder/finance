@@ -554,7 +554,15 @@
       border-radius: var(--radius);
       padding: 1rem 1.25rem 0.9rem;
     }
-    .tey-fund-ticker { font-size: 1rem; font-weight: 800; }
+    .tey-fund-ticker {
+      font-size: 1rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-block;
+      border-bottom: 1px dotted var(--border);
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tey-fund-ticker:hover { color: var(--blue); border-color: var(--blue); }
     .tey-fund-name   { font-size: 0.63rem; color: var(--muted); margin: 3px 0 0.6rem; line-height: 1.4; }
     .tey-badge {
       display: inline-block;
@@ -1396,6 +1404,20 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.getElementById('etf-modal-backdrop').classList.remove('open');
 });
 
+function openTeyModal(i) {
+  const f = TEY_FUNDS[i];
+  document.getElementById('modal-ticker').textContent = f.ticker;
+  document.getElementById('modal-name').textContent   = f.name;
+  document.getElementById('modal-desc').textContent   = f.tip;
+  document.getElementById('modal-stats').innerHTML = [
+    { val: f.yield.toFixed(2) + '%',  lbl: f.category === 'mmf' ? '7-Day Yield' : 'SEC Yield' },
+    { val: f.er.toFixed(2) + '%',     lbl: 'Exp. Ratio'  },
+    { val: f.taxExempt ? 'Yes' : 'No', lbl: 'Fed Tax-Exempt' },
+    { val: f.category === 'etf' ? 'Bond ETF' : 'Money Market', lbl: 'Type' },
+  ].map(s => `<div class="modal-stat"><div class="modal-stat-val">${s.val}</div><div class="modal-stat-lbl">${s.lbl}</div></div>`).join('');
+  document.getElementById('etf-modal-backdrop').classList.add('open');
+}
+
 // ================================================================
 // TAB SWITCHING
 // ================================================================
@@ -1412,10 +1434,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // TAX EQUIVALENT YIELD TOOL
 // ================================================================
 const TEY_FUNDS = [
-  { ticker: 'VTEB',  name: 'Vanguard Tax-Exempt Bond ETF',        yield: 3.80, taxExempt: true,  er: 0.05, category: 'etf' },
-  { ticker: 'BND',   name: 'Vanguard Total Bond Market ETF',       yield: 4.80, taxExempt: false, er: 0.03, category: 'etf' },
-  { ticker: 'VMSXX', name: 'Vanguard Municipal Money Market Fund', yield: 2.90, taxExempt: true,  er: 0.15, category: 'mmf' },
-  { ticker: 'VMFXX', name: 'Vanguard Federal Money Market Fund',   yield: 4.28, taxExempt: false, er: 0.11, category: 'mmf' },
+  { ticker: 'VTEB',  name: 'Vanguard Tax-Exempt Bond ETF',        yield: 3.80, taxExempt: true,  er: 0.05, category: 'etf', tip: 'Broad national municipal bond ETF. Interest is exempt from federal income tax. Holds ~8,000 investment-grade muni bonds. Duration ~5 years. Suitable for taxable accounts at higher brackets.' },
+  { ticker: 'BND',   name: 'Vanguard Total Bond Market ETF',       yield: 4.80, taxExempt: false, er: 0.03, category: 'etf', tip: 'Tracks the US investment-grade bond market — Treasuries, agency, and corporate bonds. Fully taxable at ordinary income rates. Very low cost. Best held in tax-advantaged accounts.' },
+  { ticker: 'VMSXX', name: 'Vanguard Municipal Money Market Fund', yield: 2.90, taxExempt: true,  er: 0.15, category: 'mmf', tip: 'Money market fund investing in short-term municipal securities. Interest is exempt from federal income tax. NAV targets $1.00. Suited for high-bracket investors parking cash in taxable accounts.' },
+  { ticker: 'VMFXX', name: 'Vanguard Federal Money Market Fund',   yield: 4.28, taxExempt: false, er: 0.11, category: 'mmf', tip: 'Vanguard\'s default settlement fund. Invests in US government securities and repos. Yield tracks the fed funds rate. Interest is fully taxable at ordinary income rates.' },
 ];
 
 const TEY_BRACKETS = [
@@ -1454,7 +1476,7 @@ function buildTeyFundCards() {
       const card = document.createElement('div');
       card.className = 'tey-fund-card';
       card.innerHTML = `
-        <div class="tey-fund-ticker">${f.ticker}</div>
+        <div class="tey-fund-ticker" onclick="openTeyModal(${i})">${f.ticker}</div>
         <div class="tey-fund-name">${f.name}</div>
         <div class="tey-badge ${badgeCls}">${badgeTxt}</div>
         <div class="tey-yield-row">
