@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Finance Toolkit</title>
+  <title>Basis Points</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='black'/><circle cx='16' cy='16' r='8' fill='white'/></svg>">
   <style>
     /* ─── Reset & Variables ─────────────────────────────────── */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -594,7 +595,8 @@
     .tey-er-line { font-size: 0.63rem; color: var(--muted); margin-top: 0.25rem; }
 
     /* ─── TEY – Fund Groups ─────────────────────────────────── */
-    .tey-fund-group { margin-bottom: 1.25rem; }
+    #tey-funds-container { display: flex; gap: 1.5rem; align-items: flex-start; }
+    .tey-fund-group { flex: 1; min-width: 0; margin-bottom: 1.25rem; }
     .tey-fund-group-lbl {
       font-size: 0.68rem;
       font-weight: 600;
@@ -657,7 +659,7 @@
 
 <header>
   <div class="header-left">
-    <div class="header-title">Finance Toolkit</div>
+    <div class="header-title">Basis Points</div>
   </div>
   <div class="header-date">Data · Feb 2026</div>
 </header>
@@ -849,7 +851,7 @@
 </div>
 
 <footer>
-  Asset Allocation Comparator &nbsp;·&nbsp; ETF data approximate as of Feb 2026 &nbsp;·&nbsp; Not investment advice
+  Basis Points &nbsp;·&nbsp; Data approximate as of Feb 2026 &nbsp;·&nbsp; Not investment advice
 </footer>
 
 <script>
@@ -1506,15 +1508,20 @@ function renderTeyTable() {
       f.taxExempt ? f.yield : f.yield * (1 - rate)
     );
 
-    const maxVal  = Math.max(...afterTax);
-    const winnerI = afterTax.indexOf(maxVal);
+    // Find winner per category independently
+    const catWinner = {};
+    ['etf', 'mmf'].forEach(cat => {
+      const catEntries = TEY_FUNDS.map((f, i) => ({ i, at: afterTax[i] })).filter((_, i) => TEY_FUNDS[i].category === cat);
+      const max = Math.max(...catEntries.map(e => e.at));
+      catWinner[cat] = catEntries.find(e => e.at === max).i;
+    });
 
     html += '<tr>';
     html += `<td><div class="tey-brkt-rate">${brkt.label}</div><div class="tey-brkt-income">${brkt.income}</div></td>`;
 
     TEY_FUNDS.forEach((f, i) => {
       const at        = afterTax[i];
-      const isW       = i === winnerI;
+      const isW       = catWinner[f.category] === i;
       const isLastEtf = f.category === 'etf' && (TEY_FUNDS[i + 1]?.category === 'mmf');
       const tey = f.taxExempt ? (f.yield / (1 - rate)) : null;
       const sub = f.taxExempt
