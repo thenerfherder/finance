@@ -512,6 +512,27 @@
     }
     .radar-body { padding: 1.5rem 1rem; }
 
+    /* ─── Growth Chart ───────────────────────────────────────── */
+    .growth-input-wrap { display: flex; align-items: center; gap: 0.5rem; }
+    .growth-lbl { font-size: 0.68rem; color: var(--muted); }
+    .growth-input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text);
+      font-size: 0.8rem;
+      padding: 2px 8px;
+      width: 100px;
+      text-align: right;
+    }
+    .growth-summary {
+      padding: 0.6rem 1.25rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      min-height: 2rem;
+    }
+
     /* ─── Tab Navigation ────────────────────────────────────── */
     .tab-bar {
       background: var(--surface);
@@ -789,6 +810,20 @@
     <div id="stats-body">
       <div class="empty-state">Set allocations in both portfolios above to see comparison.</div>
     </div>
+  </div>
+
+  <!-- ── Growth Projection ───────────────────────────────────── -->
+  <div class="section-label">30-Year Growth Projection <span class="section-label-note">— factor model return, net of fees</span></div>
+  <div class="stats-card">
+    <div class="stats-card-header">
+      <span class="stats-card-title">Projected Portfolio Value</span>
+      <div class="growth-input-wrap">
+        <label class="growth-lbl" for="growth-start">Starting $</label>
+        <input class="growth-input" id="growth-start" type="number" min="1000" max="100000000" step="1000" value="10000" oninput="renderGrowthChart()">
+      </div>
+    </div>
+    <svg id="growth-svg" viewBox="0 0 520 220" width="100%" style="display:block"></svg>
+    <div id="growth-summary" class="growth-summary"></div>
   </div>
 
   <!-- ── Methodology ──────────────────────────────────────────── -->
@@ -1114,8 +1149,9 @@ function calcStats(p) {
   const factorReturn    = RF + MKT + hml * VPREM + smb * SPREM; // nominal %
   const factorReturnNet = factorReturn - er;
   const earningsYieldNet = earningsYield - er;
+  const costDrag30 = 10000 * (Math.pow(1 + factorReturn / 100, 30) - Math.pow(1 + factorReturnNet / 100, 30));
 
-  return { pe, pb, earningsYield, earningsYieldNet, intlPct, smb, hml, er, factorReturn, factorReturnNet, total };
+  return { pe, pb, earningsYield, earningsYieldNet, intlPct, smb, hml, er, factorReturn, factorReturnNet, costDrag30, total };
 }
 
 // ================================================================
@@ -1207,6 +1243,14 @@ const STAT_GROUPS = [
         desc:   'Weighted avg annual fund cost',
         tip:    'Blended weighted-average expense ratio. Subtract from expected returns for net estimates.',
         fmt:    v => v.toFixed(3) + '%',
+        better: 'lower',
+      },
+      {
+        key:    'costDrag30',
+        name:   '30-yr ER Drag',
+        desc:   'Fee cost on $10k over 30 years (compounded)',
+        tip:    'How much the expense ratio reduces terminal wealth on a $10,000 investment over 30 years, assuming the factor model gross return holds. Lower is better.',
+        fmt:    v => '$' + Math.round(v).toLocaleString(),
         better: 'lower',
       },
     ],
@@ -1311,8 +1355,94 @@ function renderRadar() {
 // ================================================================
 // RENDER STATS
 // ================================================================
+function renderGrowthChart() {
+  const svg     = document.getElementById('growth-svg');
+  const summary = document.getElementById('growth-summary');
+  const sA = calcStats('a');
+  const sB = calcStats('b');
+
+  const empty = msg => {
+    svg.innerHTML = `<text x="260" y="110" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="var(--muted)">${msg}</text>`;
+    summary.innerHTML = '';
+  };
+
+  if (!sA || !sB || sA.total < 99 || sB.total < 99) {
+    return empty('Set allocations above to see projection.');
+  }
+
+  const START = Math.max(1000, parseFloat(document.getElementById('growth-start').value) || 10000);
+  const YEARS = 30;
+  const rA = sA.factorReturnNet / 100;
+  const rB = sB.factorReturnNet / 100;
+
+  const dataA = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rA, y));
+  const dataB = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rB, y));
+
+  const vW = 520, vH = 220;
+  const PAD = { top: 18, right: 80, bottom: 36, left: 62 };
+  const plotW = vW - PAD.left - PAD.right;
+  const plotH = vH - PAD.top - PAD.bottom;
+
+  const maxVal = Math.max(...dataA, ...dataB);
+  const xS = y => PAD.left + (y / YEARS) * plotW;
+  const yS = v => PAD.top + plotH - (v / maxVal) * plotH;
+
+  const fmt = v => {
+    if (v >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M';
+    if (v >= 1e3) return '$' + Math.round(v / 1e3) + 'k';
+    return '$' + Math.round(v);
+  };
+
+  const pathFor = data =>
+    data.map((v, y) => `${y === 0 ? 'M' : 'L'}${xS(y).toFixed(1)},${yS(v).toFixed(1)}`).join(' ');
+
+  // Y-axis ticks (5 evenly spaced)
+  const nTicks = 4;
+  let out = '';
+  for (let i = 0; i <= nTicks; i++) {
+    const v = (i / nTicks) * maxVal;
+    const y = yS(v).toFixed(1);
+    out += `<line x1="${PAD.left}" y1="${y}" x2="${PAD.left + plotW}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;
+    out += `<text x="${PAD.left - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" font-size="10" fill="var(--muted)">${fmt(v)}</text>`;
+  }
+
+  // X-axis ticks
+  [0, 10, 20, 30].forEach(yr => {
+    const x = xS(yr).toFixed(1);
+    const yBase = (PAD.top + plotH).toFixed(1);
+    out += `<line x1="${x}" y1="${yBase}" x2="${x}" y2="${(PAD.top + plotH + 4).toFixed(1)}" stroke="var(--border)" stroke-width="1"/>`;
+    out += `<text x="${x}" y="${(PAD.top + plotH + 14).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--muted)">${yr === 0 ? 'Now' : `Yr ${yr}`}</text>`;
+  });
+
+  // Lines
+  out += `<path d="${pathFor(dataA)}" fill="none" stroke="var(--a-color)" stroke-width="2.5" stroke-linejoin="round"/>`;
+  out += `<path d="${pathFor(dataB)}" fill="none" stroke="var(--b-color)" stroke-width="2.5" stroke-linejoin="round"/>`;
+
+  // End-of-line value labels
+  const endA = dataA[YEARS], endB = dataB[YEARS];
+  const yEndA = yS(endA).toFixed(1), yEndB = yS(endB).toFixed(1);
+  const xEnd  = (PAD.left + plotW + 5).toFixed(1);
+  out += `<text x="${xEnd}" y="${yEndA}" dominant-baseline="middle" font-size="10" font-weight="600" fill="var(--a-color)">${fmt(endA)}</text>`;
+  out += `<text x="${xEnd}" y="${yEndB}" dominant-baseline="middle" font-size="10" font-weight="600" fill="var(--b-color)">${fmt(endB)}</text>`;
+
+  svg.innerHTML = out;
+
+  // Summary callout
+  const nameA = document.getElementById('name-a').value.trim() || 'Portfolio A';
+  const nameB = document.getElementById('name-b').value.trim() || 'Portfolio B';
+  const diff = Math.abs(endA - endB);
+  if (diff < 1) {
+    summary.innerHTML = 'Both portfolios project the same terminal value.';
+  } else {
+    const winner = endA > endB ? nameA : nameB;
+    const color  = endA > endB ? 'var(--a-color)' : 'var(--b-color)';
+    summary.innerHTML = `<strong style="color:${color}">${winner}</strong> projects <strong>${fmt(diff)} more</strong> after 30 years — ${fmt(START)} starting, ${sA.factorReturnNet.toFixed(2)}% vs ${sB.factorReturnNet.toFixed(2)}% net annual return.`;
+  }
+}
+
 function renderStats() {
   renderRadar();
+  renderGrowthChart();
 
   const sa = calcStats('a');
   const sb = calcStats('b');
