@@ -512,6 +512,13 @@
     }
     .radar-body { padding: 1.5rem 1rem; }
 
+    /* ─── Viz Grid (Radar + Growth side by side) ────────────── */
+    .viz-grid { display: flex; gap: 1.25rem; align-items: flex-start; margin-bottom: 1.5rem; }
+    .viz-col  { flex: 1; min-width: 0; }
+    .viz-col .radar-card,
+    .viz-col .stats-card { margin-bottom: 0; }
+    @media (max-width: 800px) { .viz-grid { flex-direction: column; } }
+
     /* ─── Growth Chart ───────────────────────────────────────── */
     .growth-input-wrap { display: flex; align-items: center; gap: 0.5rem; }
     .growth-lbl { font-size: 0.68rem; color: var(--muted); }
@@ -770,24 +777,42 @@
 
   </div><!-- /portfolio-grid -->
 
-  <!-- ── Factor Radar ──────────────────────────────────────────── -->
-  <div class="section-label">Factor Profile</div>
-  <div class="radar-card">
-    <div class="stats-card-header">
-      <span class="stats-card-title">Factor Radar</span>
-      <div class="legend">
-        <div class="leg-item">
-          <div class="leg-dot" style="background:var(--a-color)"></div>
-          <span id="radar-leg-a">Portfolio A</span>
+  <!-- ── Factor Radar + Growth Projection ─────────────────────── -->
+  <div class="viz-grid">
+    <div class="viz-col">
+      <div class="section-label">Factor Profile</div>
+      <div class="radar-card">
+        <div class="stats-card-header">
+          <span class="stats-card-title">Factor Radar</span>
+          <div class="legend">
+            <div class="leg-item">
+              <div class="leg-dot" style="background:var(--a-color)"></div>
+              <span id="radar-leg-a">Portfolio A</span>
+            </div>
+            <div class="leg-item">
+              <div class="leg-dot" style="background:var(--b-color)"></div>
+              <span id="radar-leg-b">Portfolio B</span>
+            </div>
+          </div>
         </div>
-        <div class="leg-item">
-          <div class="leg-dot" style="background:var(--b-color)"></div>
-          <span id="radar-leg-b">Portfolio B</span>
+        <div class="radar-body">
+          <svg id="radar-svg" viewBox="0 0 430 350" width="100%" style="max-width:430px;display:block;margin:0 auto"></svg>
         </div>
       </div>
     </div>
-    <div class="radar-body">
-      <svg id="radar-svg" viewBox="0 0 430 350" width="100%" style="max-width:430px;display:block;margin:0 auto"></svg>
+    <div class="viz-col">
+      <div class="section-label">30-Year Growth Projection <span class="section-label-note">— factor model return, net of fees</span></div>
+      <div class="stats-card">
+        <div class="stats-card-header">
+          <span class="stats-card-title">Projected Portfolio Value</span>
+          <div class="growth-input-wrap">
+            <label class="growth-lbl" for="growth-start">Starting $</label>
+            <input class="growth-input" id="growth-start" type="number" min="1000" max="100000000" step="1000" value="10000" oninput="renderGrowthChart()">
+          </div>
+        </div>
+        <svg id="growth-svg" viewBox="0 0 520 220" width="100%" style="display:block"></svg>
+        <div id="growth-summary" class="growth-summary"></div>
+      </div>
     </div>
   </div>
 
@@ -810,20 +835,6 @@
     <div id="stats-body">
       <div class="empty-state">Set allocations in both portfolios above to see comparison.</div>
     </div>
-  </div>
-
-  <!-- ── Growth Projection ───────────────────────────────────── -->
-  <div class="section-label">30-Year Growth Projection <span class="section-label-note">— factor model return, net of fees</span></div>
-  <div class="stats-card">
-    <div class="stats-card-header">
-      <span class="stats-card-title">Projected Portfolio Value</span>
-      <div class="growth-input-wrap">
-        <label class="growth-lbl" for="growth-start">Starting $</label>
-        <input class="growth-input" id="growth-start" type="number" min="1000" max="100000000" step="1000" value="10000" oninput="renderGrowthChart()">
-      </div>
-    </div>
-    <svg id="growth-svg" viewBox="0 0 520 220" width="100%" style="display:block"></svg>
-    <div id="growth-summary" class="growth-summary"></div>
   </div>
 
   <!-- ── Methodology ──────────────────────────────────────────── -->
@@ -908,85 +919,85 @@ const ETFS = {
     ticker:  'VTI',
     name:    'Vanguard Total Stock Market ETF',
     sub:     'US Total Market',
-    pe:      28.5,   // trailing P/E (harmonic mean across holdings)
-    pb:      4.20,
+    pe:      26.0,   // trailing P/E (harmonic mean across holdings)
+    pb:      4.00,   // price-to-book, approximate
     intlPct: 0,      // % international (ex-US)
     smb:     0.05,   // Fama-French SMB loading
     hml:     0.00,   // Fama-French HML loading
     er:      0.03,   // expense ratio %
-    tip:     'Market-cap weighted index covering ~100% of investable US equity market. ~3,700 holdings. No factor tilt.',
+    tip:     'Market-cap weighted index covering ~100% of investable US equity market. ~3,525 holdings. No factor tilt.',
   },
   VXUS: {
     ticker:  'VXUS',
     name:    'Vanguard Total International Stock ETF',
     sub:     'International ex-US',
-    pe:      15.5,
-    pb:      1.90,
+    pe:      15.9,
+    pb:      1.80,
     intlPct: 97,
     smb:     0.05,
     hml:     0.10,
-    er:      0.07,
-    tip:     'Market-cap weighted index of ~8,600 non-US stocks. ~75% developed, ~25% emerging markets. No active factor tilt.',
+    er:      0.05,
+    tip:     'Market-cap weighted index of ~8,700 non-US stocks. ~75% developed, ~25% emerging markets. No active factor tilt.',
   },
   AVGE: {
     ticker:  'AVGE',
     name:    'Avantis All Equity Markets ETF',
     sub:     'Global · light factor tilts',
     pe:      18.5,
-    pb:      2.80,
+    pb:      2.70,
     intlPct: 32,
     smb:     0.20,
     hml:     0.20,
     er:      0.23,
-    tip:     'Fund-of-funds (Avantis ETFs). Target: ~70% US, ~17% intl developed, ~10% EM, ~3% sector. Light value, size, and profitability tilts.',
+    tip:     'Fund-of-funds (~10 Avantis ETFs, ~9,100 underlying securities). Largest holding: AVUS ~41%. Light value, size, and profitability tilts globally.',
   },
   AVGV: {
     ticker:  'AVGV',
     name:    'Avantis All Equity Markets Value ETF',
     sub:     'Global · strong value tilt',
-    pe:      13.5,
-    pb:      2.00,
+    pe:      14.0,
+    pb:      1.85,
     intlPct: 40,
     smb:     0.40,
     hml:     0.45,
     er:      0.26,
-    tip:     'Fund-of-funds (Avantis ETFs). Concentrated in value factors globally. ~21% to AVUV (US SCV), ~10% to AVDV (intl SCV). Strong HML loading.',
+    tip:     'Fund-of-funds (7 Avantis value ETFs). Largest holding: AVLV ~36%. Concentrated in value factors globally with meaningful small cap and profitability tilts.',
   },
   AVUV: {
     ticker:  'AVUV',
     name:    'Avantis U.S. Small Cap Value ETF',
     sub:     'US Small Cap Value',
-    pe:      12.5,
-    pb:      1.27,
+    pe:      13.4,
+    pb:      1.75,
     intlPct: 0,
-    smb:     0.95,
-    hml:     0.55,
+    smb:     0.82,
+    hml:     0.60,
     er:      0.25,
-    tip:     'Actively managed. ~761 holdings selected from Russell 2000 for low P/B and low growth forecasts. Strong SMB (0.95) and HML (0.55) loadings. ~30% Financials.',
+    tip:     'Actively managed. ~775 holdings selected for low P/B and high profitability. Strong SMB (0.82) and HML (0.60) loadings. ~30% Financials.',
   },
   AVDV: {
     ticker:  'AVDV',
     name:    'Avantis International Small Cap Value ETF',
     sub:     'Intl Small Cap Value',
-    pe:      10.0,
-    pb:      1.00,
+    pe:      14.1,
+    pb:      1.05,
     intlPct: 99,
-    smb:     0.90,
-    hml:     0.50,
+    smb:     0.78,
+    hml:     0.35,
     er:      0.36,
-    tip:     'Actively managed international small cap value. ~2,400 holdings across developed markets ex-US. Strong SMB (0.90) and HML (0.50) loadings. Complements AVUV for a global SCV allocation.',
+    tip:     'Actively managed international small cap value. ~1,686 holdings across developed markets ex-US. Strong SMB (0.78) and HML (0.35) loadings. Complements AVUV for a global SCV allocation.',
   },
   VT: {
     ticker:  'VT',
     name:    'Vanguard Total World Stock ETF',
     sub:     'Global Total Market',
-    pe:      21.3,
-    pb:      3.28,
+    pe:      22.7,
+    pb:      3.10,
     intlPct: 40,
     smb:     0.05,
     hml:     0.04,
-    er:      0.07,
-    tip:     'Market-cap weighted index covering ~9,500 stocks across 50+ countries. ~60% US, ~40% international (developed + emerging). No factor tilt. Single-fund global diversification.',
+    er:      0.06,
+    tip:     'Market-cap weighted index covering ~10,055 stocks across 50+ countries. ~60% US, ~40% international (developed + emerging). No factor tilt. Single-fund global diversification.',
   },
 };
 
@@ -1564,10 +1575,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 // TAX EQUIVALENT YIELD TOOL
 // ================================================================
 const TEY_FUNDS = [
-  { ticker: 'VTEB',  name: 'Vanguard Tax-Exempt Bond ETF',        yield: 3.80, taxExempt: true,  er: 0.05, category: 'etf', tip: 'Broad national municipal bond ETF. Interest is exempt from federal income tax. Holds ~8,000 investment-grade muni bonds. Duration ~5 years. Suitable for taxable accounts at higher brackets.' },
-  { ticker: 'BND',   name: 'Vanguard Total Bond Market ETF',       yield: 4.80, taxExempt: false, er: 0.03, category: 'etf', tip: 'Tracks the US investment-grade bond market — Treasuries, agency, and corporate bonds. Fully taxable at ordinary income rates. Very low cost. Best held in tax-advantaged accounts.' },
-  { ticker: 'VMSXX', name: 'Vanguard Municipal Money Market Fund', yield: 2.90, taxExempt: true,  er: 0.15, category: 'mmf', tip: 'Money market fund investing in short-term municipal securities. Interest is exempt from federal income tax. NAV targets $1.00. Suited for high-bracket investors parking cash in taxable accounts.' },
-  { ticker: 'VMFXX', name: 'Vanguard Federal Money Market Fund',   yield: 4.28, taxExempt: false, er: 0.11, category: 'mmf', tip: 'Vanguard\'s default settlement fund. Invests in US government securities and repos. Yield tracks the fed funds rate. Interest is fully taxable at ordinary income rates.' },
+  { ticker: 'VTEB',  name: 'Vanguard Tax-Exempt Bond ETF',        yield: 3.36, taxExempt: true,  er: 0.05, category: 'etf', tip: 'Broad national municipal bond ETF. Interest is exempt from federal income tax. Holds ~8,000 investment-grade muni bonds. Duration ~5 years. Suitable for taxable accounts at higher brackets.' },
+  { ticker: 'BND',   name: 'Vanguard Total Bond Market ETF',       yield: 4.18, taxExempt: false, er: 0.03, category: 'etf', tip: 'Tracks the US investment-grade bond market — Treasuries, agency, and corporate bonds. Fully taxable at ordinary income rates. Very low cost. Best held in tax-advantaged accounts.' },
+  { ticker: 'VMSXX', name: 'Vanguard Municipal Money Market Fund', yield: 2.42, taxExempt: true,  er: 0.15, category: 'mmf', tip: 'Money market fund investing in short-term municipal securities. Interest is exempt from federal income tax. NAV targets $1.00. Suited for high-bracket investors parking cash in taxable accounts.' },
+  { ticker: 'VMFXX', name: 'Vanguard Federal Money Market Fund',   yield: 3.76, taxExempt: false, er: 0.11, category: 'mmf', tip: 'Vanguard\'s default settlement fund. Invests in US government securities and repos. Yield tracks the fed funds rate. Interest is fully taxable at ordinary income rates.' },
 ];
 
 const TEY_BRACKETS = [
