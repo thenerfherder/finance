@@ -148,6 +148,17 @@
     /* ─── ETF rows ──────────────────────────────────────────── */
     .etf-rows { padding: 0.5rem 1.25rem; }
 
+    .etf-class-label {
+      padding: 0.5rem 0 0.15rem;
+      font-size: 0.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      opacity: 0.6;
+    }
+    .etf-class-label:first-child { padding-top: 0.1rem; }
+
     .etf-row {
       display: grid;
       grid-template-columns: 72px 1fr 64px;
@@ -848,7 +859,8 @@
         <li><strong>Earnings Yield:</strong> 1/PE × 100%. A commonly used simplified proxy for expected real returns over the long run.</li>
         <li><strong>Value Tilt (HML):</strong> Fama-French High-Minus-Low factor loading. 0 ≈ market-cap blend; higher = more tilted toward value stocks.</li>
         <li><strong>Size Tilt (SMB):</strong> Fama-French Small-Minus-Big factor loading. 0 ≈ large-cap weighted; higher = more tilted toward small-cap stocks.</li>
-        <li><strong>Factor Model Return Estimate:</strong> = 4.0% (risk-free) + 4.5% (equity market premium) + HML × 3.5% (value premium) + SMB × 2.5% (size premium). Based on historical Fama-French factor research. Factor premiums are not guaranteed to persist in the future.</li>
+        <li><strong>Factor Model Return Estimate (equities):</strong> = 4.0% (risk-free) + 4.5% (equity market premium) + HML × 3.5% (value premium) + SMB × 2.5% (size premium). Based on historical Fama-French factor research. Factor premiums are not guaranteed to persist in the future.</li>
+        <li><strong>Fixed Income Return Estimate (BND):</strong> Uses the current SEC yield as the expected gross return proxy. Blended with the equity factor return proportionally by allocation weight.</li>
         <li><strong>Expense Ratio:</strong> Weighted average annual fund cost. Already subtracted from all return estimates shown.</li>
         <li><strong>This tool is for educational and illustrative purposes only. Not investment advice.</strong></li>
       </ul>
@@ -916,113 +928,134 @@
 // ================================================================
 const ETFS = {
   VTI: {
-    ticker:  'VTI',
-    name:    'Vanguard Total Stock Market ETF',
-    sub:     'US Total Market',
-    pe:      26.0,   // trailing P/E (harmonic mean across holdings)
-    pb:      4.00,   // price-to-book, approximate
-    intlPct: 0,      // % international (ex-US)
-    smb:     0.05,   // Fama-French SMB loading
-    hml:     0.00,   // Fama-French HML loading
-    er:      0.03,   // expense ratio %
-    tip:     'Market-cap weighted index covering ~100% of investable US equity market. ~3,525 holdings. No factor tilt.',
+    ticker:    'VTI',
+    name:      'Vanguard Total Stock Market ETF',
+    sub:       'US Total Market',
+    assetClass:'equity',
+    pe:        26.0,   // trailing P/E (harmonic mean across holdings)
+    pb:        4.00,   // price-to-book, approximate
+    intlPct:   0,      // % international (ex-US)
+    smb:       0.05,   // Fama-French SMB loading
+    hml:       0.00,   // Fama-French HML loading
+    er:        0.03,   // expense ratio %
+    tip:       'Market-cap weighted index covering ~100% of investable US equity market. ~3,525 holdings. No factor tilt.',
   },
   VXUS: {
-    ticker:  'VXUS',
-    name:    'Vanguard Total International Stock ETF',
-    sub:     'International ex-US',
-    pe:      15.9,
-    pb:      1.80,
-    intlPct: 97,
-    smb:     0.05,
-    hml:     0.10,
-    er:      0.05,
-    tip:     'Market-cap weighted index of ~8,700 non-US stocks. ~75% developed, ~25% emerging markets. No active factor tilt.',
-  },
-  AVGE: {
-    ticker:  'AVGE',
-    name:    'Avantis All Equity Markets ETF',
-    sub:     'Global · light factor tilts',
-    pe:      18.5,
-    pb:      2.70,
-    intlPct: 32,
-    smb:     0.20,
-    hml:     0.20,
-    er:      0.23,
-    tip:     'Fund-of-funds (~10 Avantis ETFs, ~9,100 underlying securities). Largest holding: AVUS ~41%. Light value, size, and profitability tilts globally.',
-  },
-  AVGV: {
-    ticker:  'AVGV',
-    name:    'Avantis All Equity Markets Value ETF',
-    sub:     'Global · strong value tilt',
-    pe:      14.0,
-    pb:      1.85,
-    intlPct: 40,
-    smb:     0.40,
-    hml:     0.45,
-    er:      0.26,
-    tip:     'Fund-of-funds (7 Avantis value ETFs). Largest holding: AVLV ~36%. Concentrated in value factors globally with meaningful small cap and profitability tilts.',
-  },
-  AVUV: {
-    ticker:  'AVUV',
-    name:    'Avantis U.S. Small Cap Value ETF',
-    sub:     'US Small Cap Value',
-    pe:      13.4,
-    pb:      1.75,
-    intlPct: 0,
-    smb:     0.82,
-    hml:     0.60,
-    er:      0.25,
-    tip:     'Actively managed. ~775 holdings selected for low P/B and high profitability. Strong SMB (0.82) and HML (0.60) loadings. ~30% Financials.',
-  },
-  AVDV: {
-    ticker:  'AVDV',
-    name:    'Avantis International Small Cap Value ETF',
-    sub:     'Intl Small Cap Value',
-    pe:      14.1,
-    pb:      1.05,
-    intlPct: 99,
-    smb:     0.78,
-    hml:     0.35,
-    er:      0.36,
-    tip:     'Actively managed international small cap value. ~1,686 holdings across developed markets ex-US. Strong SMB (0.78) and HML (0.35) loadings. Complements AVUV for a global SCV allocation.',
+    ticker:    'VXUS',
+    name:      'Vanguard Total International Stock ETF',
+    sub:       'International ex-US',
+    assetClass:'equity',
+    pe:        15.9,
+    pb:        1.80,
+    intlPct:   97,
+    smb:       0.05,
+    hml:       0.10,
+    er:        0.05,
+    tip:       'Market-cap weighted index of ~8,700 non-US stocks. ~75% developed, ~25% emerging markets. No active factor tilt.',
   },
   VT: {
-    ticker:  'VT',
-    name:    'Vanguard Total World Stock ETF',
-    sub:     'Global Total Market',
-    pe:      22.7,
-    pb:      3.10,
-    intlPct: 40,
-    smb:     0.05,
-    hml:     0.04,
-    er:      0.06,
-    tip:     'Market-cap weighted index covering ~10,055 stocks across 50+ countries. ~60% US, ~40% international (developed + emerging). No factor tilt. Single-fund global diversification.',
+    ticker:    'VT',
+    name:      'Vanguard Total World Stock ETF',
+    sub:       'Global Total Market',
+    assetClass:'equity',
+    pe:        22.7,
+    pb:        3.10,
+    intlPct:   40,
+    smb:       0.05,
+    hml:       0.04,
+    er:        0.06,
+    tip:       'Market-cap weighted index covering ~10,055 stocks across 50+ countries. ~60% US, ~40% international (developed + emerging). No factor tilt. Single-fund global diversification.',
+  },
+  AVGE: {
+    ticker:    'AVGE',
+    name:      'Avantis All Equity Markets ETF',
+    sub:       'Global · light factor tilts',
+    assetClass:'equity',
+    pe:        18.5,
+    pb:        2.70,
+    intlPct:   32,
+    smb:       0.20,
+    hml:       0.20,
+    er:        0.23,
+    tip:       'Fund-of-funds (~10 Avantis ETFs, ~9,100 underlying securities). Largest holding: AVUS ~41%. Light value, size, and profitability tilts globally.',
+  },
+  AVGV: {
+    ticker:    'AVGV',
+    name:      'Avantis All Equity Markets Value ETF',
+    sub:       'Global · strong value tilt',
+    assetClass:'equity',
+    pe:        14.0,
+    pb:        1.85,
+    intlPct:   40,
+    smb:       0.40,
+    hml:       0.45,
+    er:        0.26,
+    tip:       'Fund-of-funds (7 Avantis value ETFs). Largest holding: AVLV ~36%. Concentrated in value factors globally with meaningful small cap and profitability tilts.',
+  },
+  AVUV: {
+    ticker:    'AVUV',
+    name:      'Avantis U.S. Small Cap Value ETF',
+    sub:       'US Small Cap Value',
+    assetClass:'equity',
+    pe:        13.4,
+    pb:        1.75,
+    intlPct:   0,
+    smb:       0.82,
+    hml:       0.60,
+    er:        0.25,
+    tip:       'Actively managed. ~775 holdings selected for low P/B and high profitability. Strong SMB (0.82) and HML (0.60) loadings. ~30% Financials.',
+  },
+  AVDV: {
+    ticker:    'AVDV',
+    name:      'Avantis International Small Cap Value ETF',
+    sub:       'Intl Small Cap Value',
+    assetClass:'equity',
+    pe:        14.1,
+    pb:        1.05,
+    intlPct:   99,
+    smb:       0.78,
+    hml:       0.35,
+    er:        0.36,
+    tip:       'Actively managed international small cap value. ~1,686 holdings across developed markets ex-US. Strong SMB (0.78) and HML (0.35) loadings. Complements AVUV for a global SCV allocation.',
+  },
+  BND: {
+    ticker:    'BND',
+    name:      'Vanguard Total Bond Market ETF',
+    sub:       'US Investment-Grade Bonds',
+    assetClass:'fixed',
+    bondYield: 4.18,   // SEC yield — drives expected return
+    pe:        null,   // N/A for bonds
+    pb:        null,   // N/A for bonds
+    intlPct:   0,
+    smb:       0,
+    hml:       0,
+    er:        0.03,
+    tip:       'Tracks the Bloomberg U.S. Aggregate Bond Index. ~17,000 investment-grade US bonds — Treasuries (~45%), agencies, and corporates. Duration ~6 years. Broad core bond exposure. Fully taxable interest; best held in tax-advantaged accounts.',
   },
 };
 
-const TICKERS = ['VTI', 'VXUS', 'VT', 'AVGE', 'AVGV', 'AVUV', 'AVDV'];
+const TICKERS = ['VTI', 'VXUS', 'VT', 'AVGE', 'AVGV', 'AVUV', 'AVDV', 'BND'];
 
 // ================================================================
 // PRESETS
 // ================================================================
 const PRESETS = {
-  '2fund':        { VTI:60, VXUS:40, VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
-  'us_only':      { VTI:100,VXUS:0,  VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
-  'intl_only':    { VTI:0,  VXUS:100,VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0  },
-  '3fund':        { VTI:50, VXUS:30, VT:0,   AVGE:0,  AVGV:0,  AVUV:20, AVDV:0  },
-  'avantis_core': { VTI:0,  VXUS:0,  VT:0,   AVGE:60, AVGV:0,  AVUV:40, AVDV:0  },
-  'factor_tilt':  { VTI:0,  VXUS:20, VT:0,   AVGE:20, AVGV:0,  AVUV:40, AVDV:20 },
-  'deep_value':   { VTI:0,  VXUS:0,  VT:0,   AVGE:0,  AVGV:50, AVUV:50, AVDV:0  },
-  'all_avantis':  { VTI:0,  VXUS:0,  VT:0,   AVGE:40, AVGV:30, AVUV:20, AVDV:10 },
+  '2fund':        { VTI:60, VXUS:40, VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0,  BND:0  },
+  'us_only':      { VTI:100,VXUS:0,  VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0,  BND:0  },
+  'intl_only':    { VTI:0,  VXUS:100,VT:0,   AVGE:0,  AVGV:0,  AVUV:0,  AVDV:0,  BND:0  },
+  '3fund':        { VTI:50, VXUS:30, VT:0,   AVGE:0,  AVGV:0,  AVUV:20, AVDV:0,  BND:0  },
+  'avantis_core': { VTI:0,  VXUS:0,  VT:0,   AVGE:60, AVGV:0,  AVUV:40, AVDV:0,  BND:0  },
+  'factor_tilt':  { VTI:0,  VXUS:20, VT:0,   AVGE:20, AVGV:0,  AVUV:40, AVDV:20, BND:0  },
+  'deep_value':   { VTI:0,  VXUS:0,  VT:0,   AVGE:0,  AVGV:50, AVUV:50, AVDV:0,  BND:0  },
+  'all_avantis':  { VTI:0,  VXUS:0,  VT:0,   AVGE:40, AVGV:30, AVUV:20, AVDV:10, BND:0  },
 };
 
 // ================================================================
 // STATE — default portfolios give a useful starting comparison
 // ================================================================
 const state = {
-  a: { VTI:51, VXUS:23, VT:0, AVGE:0,  AVGV:0,  AVUV:18, AVDV:8  },
-  b: { VTI:0,  VXUS:0,  VT:0, AVGE:100,AVGV:0,  AVUV:0,  AVDV:0  },
+  a: { VTI:42, VXUS:18, VT:0, AVGE:0, AVGV:0, AVUV:14, AVDV:6, BND:20 },
+  b: { VTI:0,  VXUS:0,  VT:80,AVGE:0, AVGV:0, AVUV:0,  AVDV:0, BND:20 },
 };
 
 // ================================================================
@@ -1031,9 +1064,20 @@ const state = {
 function buildRows(p) {
   const container = document.getElementById(`rows-${p}`);
   container.innerHTML = '';
+  let lastClass = null;
   TICKERS.forEach(tk => {
     const etf = ETFS[tk];
     const v   = state[p][tk] ?? 0;
+
+    // Section divider when asset class changes
+    if (etf.assetClass !== lastClass) {
+      const lbl = document.createElement('div');
+      lbl.className = 'etf-class-label';
+      lbl.textContent = etf.assetClass === 'equity' ? 'Equities' : 'Fixed Income';
+      container.appendChild(lbl);
+      lastClass = etf.assetClass;
+    }
+
     const row = document.createElement('div');
     row.className = 'etf-row';
     row.innerHTML = `
@@ -1137,32 +1181,46 @@ function calcStats(p) {
   const total = TICKERS.reduce((s,tk) => s + (w[tk]||0), 0);
   if (total === 0) return null;
 
-  let eySum    = 0; // sum of weighted earnings yields → harmonic mean PE
-  let pb       = 0;
+  let eySum    = 0;  // portfolio-weighted earnings yields (equity ETFs only)
+  let pbSum    = 0;  // portfolio-weighted P/B (equity ETFs only)
   let intlPct  = 0;
   let smb      = 0;
   let hml      = 0;
   let er       = 0;
+  let equityW  = 0;  // fraction of portfolio in equity ETFs
+  let bondRet  = 0;  // portfolio-weighted bond yield contribution
 
   TICKERS.forEach(tk => {
     const frac = (w[tk]||0) / total;
     const e    = ETFS[tk];
-    eySum   += frac * (1 / e.pe);
-    pb      += frac * e.pb;
+    er      += frac * e.er;
     intlPct += frac * e.intlPct;
     smb     += frac * e.smb;
     hml     += frac * e.hml;
-    er      += frac * e.er;
+    if (e.assetClass === 'fixed') {
+      bondRet += frac * e.bondYield;
+    } else {
+      equityW += frac;
+      eySum   += frac * (1 / e.pe);
+      pbSum   += frac * e.pb;
+    }
   });
 
-  const pe            = 1 / eySum;
-  const earningsYield = eySum * 100;          // %
-  const factorReturn    = RF + MKT + hml * VPREM + smb * SPREM; // nominal %
+  // PE and PB are for the equity sleeve only (null if no equities)
+  const pe            = equityW > 0 ? equityW / eySum : null;
+  const pb            = equityW > 0 ? pbSum / equityW : null;
+  const earningsYield = eySum * 100;  // portfolio-level equity earnings yield contribution
+
+  // Equity factor return (per unit invested in equities), then blended with bond yield
+  const equityHML   = equityW > 0 ? hml / equityW : 0;
+  const equitySMB   = equityW > 0 ? smb / equityW : 0;
+  const equityRet   = RF + MKT + equityHML * VPREM + equitySMB * SPREM;
+  const factorReturn    = equityW * equityRet + bondRet;  // bondRet already portfolio-weighted
   const factorReturnNet = factorReturn - er;
   const earningsYieldNet = earningsYield - er;
   const costDrag30 = 10000 * (Math.pow(1 + factorReturn / 100, 30) - Math.pow(1 + factorReturnNet / 100, 30));
 
-  return { pe, pb, earningsYield, earningsYieldNet, intlPct, smb, hml, er, factorReturn, factorReturnNet, costDrag30, total };
+  return { pe, pb, earningsYield, earningsYieldNet, intlPct, smb, hml, er, factorReturn, factorReturnNet, costDrag30, total, equityW };
 }
 
 // ================================================================
@@ -1175,17 +1233,17 @@ const STAT_GROUPS = [
       {
         key:    'pe',
         name:   'P/E Ratio',
-        desc:   'Harmonic mean price-to-earnings',
-        tip:    'Blended P/E using harmonic mean (weighted avg of earnings yields). Lower = cheaper relative to earnings.',
-        fmt:    v => v.toFixed(1) + 'x',
+        desc:   'Harmonic mean P/E · equity sleeve only',
+        tip:    'Harmonic mean P/E of the equity sleeve (bond allocations excluded). Lower = cheaper relative to earnings.',
+        fmt:    v => v == null ? '—' : v.toFixed(1) + 'x',
         better: 'lower',
       },
       {
         key:    'pb',
         name:   'P/B Ratio',
-        desc:   'Weighted avg price-to-book',
-        tip:    'Weighted average price-to-book ratio. Lower = more value exposure.',
-        fmt:    v => v.toFixed(2) + 'x',
+        desc:   'Weighted avg P/B · equity sleeve only',
+        tip:    'Weighted average price-to-book of the equity sleeve (bond allocations excluded). Lower = more value exposure.',
+        fmt:    v => v == null ? '—' : v.toFixed(2) + 'x',
         better: 'lower',
       },
     ],
@@ -1478,14 +1536,16 @@ function renderStats() {
       const va = sa[def.key];
       const vb = sb[def.key];
 
-      // Butterfly bar widths (each half max 90px)
-      const maxV = Math.max(Math.abs(va), Math.abs(vb), 0.001);
-      const pctA = (va / maxV) * 90;
-      const pctB = (vb / maxV) * 90;
+      // Butterfly bar widths (each half max 90px); treat null as 0
+      const vaNum = va ?? 0;
+      const vbNum = vb ?? 0;
+      const maxV = Math.max(Math.abs(vaNum), Math.abs(vbNum), 0.001);
+      const pctA = (vaNum / maxV) * 90;
+      const pctB = (vbNum / maxV) * 90;
 
-      // Better badge
+      // Better badge (skip if either value is null)
       let badgeA = '', badgeB = '';
-      if (def.better !== 'neutral' && Math.abs(va - vb) > 0.0005) {
+      if (def.better !== 'neutral' && va != null && vb != null && Math.abs(va - vb) > 0.0005) {
         const aWins = def.better === 'higher' ? va > vb : va < vb;
         if (aWins) badgeA = '<span class="badge-up">↑</span>';
         else        badgeB = '<span class="badge-up">↑</span>';
@@ -1521,17 +1581,24 @@ function renderStats() {
 // ================================================================
 function openEtfModal(tk) {
   const etf = ETFS[tk];
+  const isFixed = etf.assetClass === 'fixed';
   document.getElementById('modal-ticker').textContent = tk;
   document.getElementById('modal-name').textContent   = etf.name;
   document.getElementById('modal-desc').textContent   = etf.tip;
   document.getElementById('modal-stats').innerHTML = [
-    { val: etf.pe.toFixed(1) + 'x',   lbl: 'P/E Ratio'   },
-    { val: etf.pb.toFixed(2) + 'x',   lbl: 'P/B Ratio'   },
-    { val: (100/etf.pe).toFixed(2)+'%', lbl: 'Earn. Yield' },
-    { val: etf.smb.toFixed(2),         lbl: 'SMB'         },
-    { val: etf.hml.toFixed(2),         lbl: 'HML'         },
-    { val: etf.intlPct + '%',          lbl: "Int'l %"     },
-    { val: etf.er.toFixed(3) + '%',    lbl: 'Exp. Ratio'  },
+    isFixed
+      ? { val: etf.bondYield.toFixed(2) + '%', lbl: 'SEC Yield'  }
+      : { val: etf.pe.toFixed(1) + 'x',        lbl: 'P/E Ratio'  },
+    isFixed
+      ? { val: '—',                             lbl: 'P/B Ratio'  }
+      : { val: etf.pb.toFixed(2) + 'x',        lbl: 'P/B Ratio'  },
+    isFixed
+      ? { val: '—',                             lbl: 'Earn. Yield'}
+      : { val: (100/etf.pe).toFixed(2) + '%',  lbl: 'Earn. Yield'},
+    { val: etf.smb.toFixed(2),   lbl: 'SMB'        },
+    { val: etf.hml.toFixed(2),   lbl: 'HML'        },
+    { val: etf.intlPct + '%',    lbl: "Int'l %"    },
+    { val: etf.er.toFixed(3) + '%', lbl: 'Exp. Ratio' },
   ].map(s => `<div class="modal-stat"><div class="modal-stat-val">${s.val}</div><div class="modal-stat-lbl">${s.lbl}</div></div>`).join('');
   document.getElementById('etf-modal-backdrop').classList.add('open');
 }
