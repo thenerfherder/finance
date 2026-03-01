@@ -145,6 +145,43 @@
     }
     .btn-sm:hover { color: var(--text); border-color: var(--muted); }
 
+    /* ─── Advisor toggle ─────────────────────────────────────── */
+    .advisor-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.68rem;
+      color: var(--muted);
+      cursor: pointer;
+      user-select: none;
+      white-space: nowrap;
+    }
+    .advisor-toggle input[type="checkbox"] {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 26px;
+      height: 14px;
+      background: var(--border);
+      border-radius: 7px;
+      position: relative;
+      cursor: pointer;
+      transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    .advisor-toggle input[type="checkbox"]:checked { background: var(--yellow); }
+    .advisor-toggle input[type="checkbox"]::after {
+      content: '';
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: var(--text);
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: left 0.2s;
+    }
+    .advisor-toggle input[type="checkbox"]:checked::after { left: 14px; }
+
     /* ─── ETF rows ──────────────────────────────────────────── */
     .etf-rows { padding: 0.5rem 1.25rem; }
 
@@ -759,6 +796,10 @@
             <option value="all_avantis">All Avantis Blend</option>
           </select>
           <button class="btn-sm" onclick="normalizePortfolio('a')">Normalize</button>
+          <label class="advisor-toggle" title="Add 1% AUM advisory fee on top of fund expense ratios">
+            <input type="checkbox" id="advisor-a" onchange="renderAll()">
+            Advisor +1%
+          </label>
         </div>
       </div>
       <div class="etf-rows" id="rows-a"></div>
@@ -790,6 +831,10 @@
             <option value="all_avantis">All Avantis Blend</option>
           </select>
           <button class="btn-sm" onclick="normalizePortfolio('b')">Normalize</button>
+          <label class="advisor-toggle" title="Add 1% AUM advisory fee on top of fund expense ratios">
+            <input type="checkbox" id="advisor-b" onchange="renderAll()">
+            Advisor +1%
+          </label>
         </div>
       </div>
       <div class="etf-rows" id="rows-b"></div>
@@ -1260,6 +1305,9 @@ function calcStats(p) {
     }
   });
 
+  // Advisor AUM fee: +1% on top of fund expense ratios
+  if (document.getElementById(`advisor-${p}`)?.checked) er += 1.0;
+
   // Portfolio volatility via Markowitz formula: σ_p = √(ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ)
   let portfolioVariance = 0;
   TICKERS.forEach(tki => {
@@ -1393,15 +1441,15 @@ const STAT_GROUPS = [
         key:    'er',
         name:   'Expense Ratio',
         desc:   'Weighted avg annual fund cost',
-        tip:    'Blended weighted-average expense ratio. Subtract from expected returns for net estimates.',
+        tip:    'Blended weighted-average fund expense ratio. Includes an additional +1.000% AUM advisory fee when "Advisor +1%" is toggled on. Subtract from expected returns for net estimates.',
         fmt:    v => v.toFixed(3) + '%',
         better: 'lower',
       },
       {
         key:    'costDrag30',
-        name:   '30-yr ER Drag',
-        desc:   'Fee cost on $1M over 30 years (compounded)',
-        tip:    'How much the expense ratio reduces terminal wealth on a $1,000,000 investment over 30 years, assuming the factor model gross return holds. Lower is better.',
+        name:   '30-yr Fee Drag',
+        desc:   'Total fee cost on $1M over 30 years (compounded)',
+        tip:    'How much total fees (fund ER + any advisor AUM fee) reduce terminal wealth on a $1,000,000 investment over 30 years, assuming the factor model gross return holds. Lower is better.',
         fmt:    v => '$' + Math.round(v).toLocaleString(),
         better: 'lower',
       },
