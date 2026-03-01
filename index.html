@@ -1255,7 +1255,7 @@ function calcStats(p) {
   // Geometric return ≈ arithmetic − σ²/2  (variance drag; σ in %, so divide by 200)
   const geometricReturnNet = factorReturnNet - (portfolioVol * portfolioVol) / 200;
   const earningsYieldNet = earningsYield - er;
-  const costDrag30 = 10000 * (Math.pow(1 + factorReturn / 100, 30) - Math.pow(1 + factorReturnNet / 100, 30));
+  const costDrag30 = 1000000 * (Math.pow(1 + factorReturn / 100, 30) - Math.pow(1 + factorReturnNet / 100, 30));
 
   return { pe, pb, earningsYield, earningsYieldNet, intlPct, smb, hml, er, factorReturn, factorReturnNet, portfolioVol, geometricReturnNet, costDrag30, total, equityW };
 }
@@ -1370,8 +1370,8 @@ const STAT_GROUPS = [
       {
         key:    'costDrag30',
         name:   '30-yr ER Drag',
-        desc:   'Fee cost on $10k over 30 years (compounded)',
-        tip:    'How much the expense ratio reduces terminal wealth on a $10,000 investment over 30 years, assuming the factor model gross return holds. Lower is better.',
+        desc:   'Fee cost on $1M over 30 years (compounded)',
+        tip:    'How much the expense ratio reduces terminal wealth on a $1,000,000 investment over 30 years, assuming the factor model gross return holds. Lower is better.',
         fmt:    v => '$' + Math.round(v).toLocaleString(),
         better: 'lower',
       },
