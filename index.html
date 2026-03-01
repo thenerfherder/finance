@@ -513,10 +513,10 @@
     .radar-body { padding: 1.5rem 1rem; }
 
     /* ─── Viz Grid (Radar + Growth side by side) ────────────── */
-    .viz-grid { display: flex; gap: 1.25rem; align-items: flex-start; margin-bottom: 1.5rem; }
-    .viz-col  { flex: 1; min-width: 0; }
+    .viz-grid { display: flex; gap: 1.25rem; align-items: stretch; margin-bottom: 1.5rem; }
+    .viz-col  { flex: 1; min-width: 0; display: flex; flex-direction: column; }
     .viz-col .radar-card,
-    .viz-col .stats-card { margin-bottom: 0; }
+    .viz-col .stats-card { margin-bottom: 0; flex: 1; }
     @media (max-width: 800px) { .viz-grid { flex-direction: column; } }
 
     /* ─── Growth Chart ───────────────────────────────────────── */
