@@ -886,7 +886,9 @@
         <li><strong>Factor Model Return Estimate (equities):</strong> = 4.0% (risk-free) + 4.5% (equity market premium) + HML × 3.5% (value premium) + SMB × 2.5% (size premium). Based on historical Fama-French factor research. Factor premiums are not guaranteed to persist in the future.</li>
         <li><strong>Fixed Income Return Estimate (BND):</strong> Uses the current SEC yield as the expected gross return proxy. Blended with the equity factor return proportionally by allocation weight.</li>
         <li><strong>Expense Ratio:</strong> Weighted average annual fund cost. Already subtracted from all return estimates shown.</li>
-        <li><strong>Geometric Return &amp; Variance Drag:</strong> The factor model produces an arithmetic mean return. Over time, volatility reduces compounded growth via variance drag: geometric ≈ arithmetic − σ²/2. The 30-year growth projection uses this geometric (CAGR) rate. Portfolio volatility is the weighted average of individual ETF volatilities — a conservative upper bound that ignores diversification benefits.</li>
+        <li><strong>Portfolio Volatility:</strong> Computed via the Markowitz formula — σ_p = √(ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ) — using approximate pairwise ETF correlations. This properly captures diversification: a blended portfolio is less volatile than the sum of its parts.</li>
+        <li><strong>Geometric Return &amp; Variance Drag:</strong> The factor model produces an arithmetic mean return. Over time, volatility reduces compounded growth via variance drag: geometric ≈ arithmetic − σ²/2. The 30-year growth projection uses this geometric (CAGR) rate as the median path.</li>
+        <li><strong>Uncertainty Band (Growth Chart):</strong> The shaded region shows ±1 standard deviation of outcomes, derived from the lognormal distribution of portfolio wealth: at year t the band is median × exp(±σ√t). This covers roughly 68% of expected outcomes. Contributions, withdrawals, rebalancing, and taxes are not modeled.</li>
         <li><strong>This tool is for educational and illustrative purposes only. Not investment advice.</strong></li>
       </ul>
     </div>
@@ -1209,29 +1211,46 @@ const MKT  = 4.5;   // equity market premium %
 const VPREM = 3.5;  // value premium per unit HML %
 const SPREM = 2.5;  // size premium per unit SMB %
 
+// Pairwise annual-return correlations (upper triangle, TICKERS order).
+// Used for Markowitz portfolio variance: σ_p² = ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ
+const CORR_MATRIX = {
+  'VTI,VXUS': 0.87, 'VTI,VT':   0.98, 'VTI,AVGE': 0.96, 'VTI,AVGV': 0.91,
+  'VTI,AVUV': 0.85, 'VTI,AVDV': 0.82, 'VTI,BND':  0.00,
+  'VXUS,VT':  0.97, 'VXUS,AVGE':0.93, 'VXUS,AVGV':0.90,
+  'VXUS,AVUV':0.75, 'VXUS,AVDV':0.90, 'VXUS,BND': 0.00,
+  'VT,AVGE':  0.98, 'VT,AVGV':  0.94, 'VT,AVUV':  0.83,
+  'VT,AVDV':  0.87, 'VT,BND':   0.00,
+  'AVGE,AVGV':0.96, 'AVGE,AVUV':0.87, 'AVGE,AVDV':0.90, 'AVGE,BND': 0.00,
+  'AVGV,AVUV':0.90, 'AVGV,AVDV':0.93, 'AVGV,BND': 0.00,
+  'AVUV,AVDV':0.77, 'AVUV,BND': 0.00,
+  'AVDV,BND': 0.00,
+};
+function getCorr(a, b) {
+  if (a === b) return 1;
+  return CORR_MATRIX[`${a},${b}`] ?? CORR_MATRIX[`${b},${a}`] ?? 0;
+}
+
 function calcStats(p) {
   const w     = state[p];
   const total = TICKERS.reduce((s,tk) => s + (w[tk]||0), 0);
   if (total === 0) return null;
 
-  let eySum       = 0;  // portfolio-weighted earnings yields (equity ETFs only)
-  let pbSum       = 0;  // portfolio-weighted P/B (equity ETFs only)
-  let intlPct     = 0;
-  let smb         = 0;
-  let hml         = 0;
-  let er          = 0;
-  let equityW     = 0;  // fraction of portfolio in equity ETFs
-  let bondRet     = 0;  // portfolio-weighted bond yield contribution
-  let portfolioVol = 0; // weighted-average annualized volatility %
+  let eySum    = 0;  // portfolio-weighted earnings yields (equity ETFs only)
+  let pbSum    = 0;  // portfolio-weighted P/B (equity ETFs only)
+  let intlPct  = 0;
+  let smb      = 0;
+  let hml      = 0;
+  let er       = 0;
+  let equityW  = 0;  // fraction of portfolio in equity ETFs
+  let bondRet  = 0;  // portfolio-weighted bond yield contribution
 
   TICKERS.forEach(tk => {
     const frac = (w[tk]||0) / total;
     const e    = ETFS[tk];
-    er           += frac * e.er;
-    intlPct      += frac * e.intlPct;
-    smb          += frac * e.smb;
-    hml          += frac * e.hml;
-    portfolioVol += frac * e.vol;
+    er      += frac * e.er;
+    intlPct += frac * e.intlPct;
+    smb     += frac * e.smb;
+    hml     += frac * e.hml;
     if (e.assetClass === 'fixed') {
       bondRet += frac * e.bondYield;
     } else {
@@ -1240,6 +1259,17 @@ function calcStats(p) {
       pbSum   += frac * e.pb;
     }
   });
+
+  // Portfolio volatility via Markowitz formula: σ_p = √(ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ)
+  let portfolioVariance = 0;
+  TICKERS.forEach(tki => {
+    TICKERS.forEach(tkj => {
+      const wi = (w[tki]||0) / total;
+      const wj = (w[tkj]||0) / total;
+      portfolioVariance += wi * wj * ETFS[tki].vol * ETFS[tkj].vol * getCorr(tki, tkj);
+    });
+  });
+  const portfolioVol = Math.sqrt(portfolioVariance);
 
   // PE and PB are for the equity sleeve only (null if no equities)
   const pe            = equityW > 0 ? equityW / eySum : null;
@@ -1334,7 +1364,7 @@ const STAT_GROUPS = [
         key:    'portfolioVol',
         name:   'Est. Volatility (σ)',
         desc:   'Weighted-avg annualized std. deviation',
-        tip:    'Weighted average of individual ETF annualized volatilities. This is a conservative upper bound — actual portfolio vol is lower due to diversification, but correlations are omitted here.',
+        tip:    'Portfolio annualized volatility via Markowitz formula: σ_p = √(ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ), using approximate pairwise ETF correlations. Properly accounts for diversification — a 60/40 VTI/BND portfolio is much less volatile than either held alone.',
         fmt:    v => v.toFixed(1) + '%',
         better: 'neutral',
       },
@@ -1518,12 +1548,20 @@ function renderGrowthChart() {
   const dataA = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rA, y));
   const dataB = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rB, y));
 
+  // ±1σ fan bands — lognormal uncertainty: median × exp(±σ√t)
+  const sigA = sA.portfolioVol / 100;
+  const sigB = sB.portfolioVol / 100;
+  const dataAUp  = dataA.map((v, y) => v * Math.exp( sigA * Math.sqrt(y)));
+  const dataALow = dataA.map((v, y) => v * Math.exp(-sigA * Math.sqrt(y)));
+  const dataBUp  = dataB.map((v, y) => v * Math.exp( sigB * Math.sqrt(y)));
+  const dataBLow = dataB.map((v, y) => v * Math.exp(-sigB * Math.sqrt(y)));
+
   const vW = 520, vH = 300;
   const PAD = { top: 18, right: 80, bottom: 36, left: 62 };
   const plotW = vW - PAD.left - PAD.right;
   const plotH = vH - PAD.top - PAD.bottom;
 
-  const maxVal = Math.max(...dataA, ...dataB);
+  const maxVal = Math.max(...dataAUp, ...dataBUp);
   const xS = y => PAD.left + (y / YEARS) * plotW;
   const yS = v => PAD.top + plotH - (v / maxVal) * plotH;
 
@@ -1535,6 +1573,13 @@ function renderGrowthChart() {
 
   const pathFor = data =>
     data.map((v, y) => `${y === 0 ? 'M' : 'L'}${xS(y).toFixed(1)},${yS(v).toFixed(1)}`).join(' ');
+
+  // Closed polygon tracing hi band forward then lo band backward
+  const bandPath = (hi, lo) => {
+    let d = hi.map((v, y) => `${y===0?'M':'L'}${xS(y).toFixed(1)},${yS(v).toFixed(1)}`).join(' ');
+    for (let y = YEARS; y >= 0; y--) d += ` L${xS(y).toFixed(1)},${yS(lo[y]).toFixed(1)}`;
+    return d + ' Z';
+  };
 
   // Y-axis ticks (5 evenly spaced)
   const nTicks = 4;
@@ -1554,7 +1599,11 @@ function renderGrowthChart() {
     out += `<text x="${x}" y="${(PAD.top + plotH + 14).toFixed(1)}" text-anchor="middle" font-size="10" fill="var(--muted)">${yr === 0 ? 'Now' : `Yr ${yr}`}</text>`;
   });
 
-  // Lines
+  // Fan bands (drawn first so median lines render on top)
+  out += `<path d="${bandPath(dataBUp, dataBLow)}" fill="var(--b-color)" fill-opacity="0.10" stroke="none"/>`;
+  out += `<path d="${bandPath(dataAUp, dataALow)}" fill="var(--a-color)" fill-opacity="0.10" stroke="none"/>`;
+
+  // Median lines
   out += `<path d="${pathFor(dataA)}" fill="none" stroke="var(--a-color)" stroke-width="2.5" stroke-linejoin="round"/>`;
   out += `<path d="${pathFor(dataB)}" fill="none" stroke="var(--b-color)" stroke-width="2.5" stroke-linejoin="round"/>`;
 
@@ -1573,7 +1622,7 @@ function renderGrowthChart() {
   const diff = Math.abs(endA - endB);
   const rateA = (rA * 100).toFixed(2), rateB = (rB * 100).toFixed(2);
   const modeNote = isReal ? ` real (${INFLATION}% infl.)` : ' nominal';
-  const dragNote = `geometric return, variance drag applied`;
+  const dragNote = `geometric CAGR · shading = ±1σ (68% of outcomes)`;
   if (diff < 1) {
     summary.innerHTML = `Both portfolios project the same terminal value — ${dragNote}${modeNote}.`;
   } else {
