@@ -888,6 +888,10 @@
               <label class="growth-lbl" for="growth-start">Starting $</label>
               <input class="growth-input" id="growth-start" type="number" min="1000" max="100000000" step="1000" value="1000000" oninput="renderGrowthChart()">
             </div>
+            <div class="growth-input-wrap">
+              <label class="growth-lbl" for="growth-contrib">±$/mo</label>
+              <input class="growth-input" id="growth-contrib" type="number" min="-50000" max="50000" step="100" value="0" oninput="renderGrowthChart()" style="width:80px" title="Monthly contribution (+) or withdrawal (−)">
+            </div>
           </div>
         </div>
         <svg id="growth-svg" viewBox="0 0 520 300" width="100%" style="display:block"></svg>
@@ -933,7 +937,8 @@
         <li><strong>Expense Ratio:</strong> Weighted average annual fund cost. Already subtracted from all return estimates shown.</li>
         <li><strong>Portfolio Volatility:</strong> Computed via the Markowitz formula — σ_p = √(ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ) — using approximate pairwise ETF correlations. This properly captures diversification: a blended portfolio is less volatile than the sum of its parts.</li>
         <li><strong>Geometric Return &amp; Variance Drag:</strong> The factor model produces an arithmetic mean return. Over time, volatility reduces compounded growth via variance drag: geometric ≈ arithmetic − σ²/2. The 30-year growth projection uses this geometric (CAGR) rate as the median path.</li>
-        <li><strong>Uncertainty Band (Growth Chart):</strong> The shaded region shows ±1 standard deviation of outcomes, derived from the lognormal distribution of portfolio wealth: at year t the band is median × exp(±σ√t). This covers roughly 68% of expected outcomes. Contributions, withdrawals, rebalancing, and taxes are not modeled.</li>
+        <li><strong>Monthly Contributions / Withdrawals:</strong> The ±$/mo field adds a fixed monthly cash flow to the projection. Positive values = contributions (accumulation); negative = withdrawals (decumulation). Uses proper monthly compounding: annuity FV = C × ((1+r)^y − 1) / r_monthly. In real mode, the contribution amount is treated as constant in today's dollars. The portfolio is floored at $0 (depletion).</li>
+        <li><strong>Uncertainty Band (Growth Chart):</strong> The shaded region shows ±1 standard deviation of outcomes, derived from the lognormal distribution: at year t the band is median × exp(±σ√t), covering roughly 68% of expected outcomes. When monthly cash flows are non-zero, the bands are an approximation — the true distribution with contributions is more complex. Rebalancing and taxes are not modeled.</li>
         <li><strong>This tool is for educational and illustrative purposes only. Not investment advice.</strong></li>
       </ul>
     </div>
@@ -1591,8 +1596,9 @@ function renderGrowthChart() {
     return empty('Set allocations above to see projection.');
   }
 
-  const START = Math.max(1000, parseFloat(document.getElementById('growth-start').value) || 1000000);
-  const YEARS = 30;
+  const START  = Math.max(1000, parseFloat(document.getElementById('growth-start').value) || 1000000);
+  const CONTRIB = parseFloat(document.getElementById('growth-contrib').value) || 0;
+  const YEARS  = 30;
   const isReal = growthMode === 'real';
   const inflAdj = isReal ? (1 + INFLATION / 100) : 1;
 
@@ -1601,8 +1607,19 @@ function renderGrowthChart() {
   const rA = (1 + sA.geometricReturnNet / 100) / inflAdj - 1;
   const rB = (1 + sB.geometricReturnNet / 100) / inflAdj - 1;
 
-  const dataA = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rA, y));
-  const dataB = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rB, y));
+  // Portfolio value at year y: lump sum + monthly contribution annuity (proper monthly compounding)
+  // In real mode, CONTRIB is already in today's dollars — consistent with the real rate used.
+  const portFV = (r, y) => {
+    const lump = START * Math.pow(1 + r, y);
+    if (CONTRIB === 0) return lump;
+    const rMo = Math.pow(1 + r, 1 / 12) - 1;
+    const annuity = rMo > 1e-10 ? CONTRIB * (Math.pow(1 + r, y) - 1) / rMo
+                                 : CONTRIB * 12 * y;
+    return Math.max(0, lump + annuity);
+  };
+
+  const dataA = Array.from({ length: YEARS + 1 }, (_, y) => portFV(rA, y));
+  const dataB = Array.from({ length: YEARS + 1 }, (_, y) => portFV(rB, y));
 
   // ±1σ fan bands — lognormal uncertainty: median × exp(±σ√t)
   const sigA = sA.portfolioVol / 100;
@@ -1678,14 +1695,17 @@ function renderGrowthChart() {
   const diff = Math.abs(endA - endB);
   const rateA = (rA * 100).toFixed(2), rateB = (rB * 100).toFixed(2);
   const modeNote = isReal ? ` real (${INFLATION}% infl.)` : ' nominal';
-  const dragNote = `geometric CAGR · shading = ±1σ (68% of outcomes)`;
+  const dragNote    = `geometric CAGR · shading = ±1σ (68% of outcomes)`;
+  const contribNote = CONTRIB > 0 ? ` + ${fmt(CONTRIB)}/mo`
+                    : CONTRIB < 0 ? ` − ${fmt(-CONTRIB)}/mo withdrawals`
+                    : '';
   if (diff < 1) {
     summary.innerHTML = `Both portfolios project the same terminal value — ${dragNote}${modeNote}.`;
   } else {
     const winner = endA > endB ? nameA : nameB;
     const color  = endA > endB ? 'var(--a-color)' : 'var(--b-color)';
     const dollarNote = isReal ? ' in today\'s dollars' : '';
-    summary.innerHTML = `<strong style="color:${color}">${winner}</strong> projects <strong>${fmt(diff)} more</strong> after 30 years${dollarNote} — ${fmt(START)} starting, ${rateA}% vs ${rateB}%${modeNote} CAGR (${dragNote}).`;
+    summary.innerHTML = `<strong style="color:${color}">${winner}</strong> projects <strong>${fmt(diff)} more</strong> after 30 years${dollarNote} — ${fmt(START)} starting${contribNote}, ${rateA}% vs ${rateB}%${modeNote} CAGR (${dragNote}).`;
   }
 }
 
