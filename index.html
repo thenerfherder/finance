@@ -887,6 +887,7 @@
         <li><strong>Factor Model Return Estimate (equities):</strong> = 4.0% (risk-free) + 4.5% (equity market premium) + HML × 3.5% (value premium) + SMB × 2.5% (size premium). Based on historical Fama-French factor research. Factor premiums are not guaranteed to persist in the future.</li>
         <li><strong>Fixed Income Return Estimate (BND):</strong> Uses the current SEC yield as the expected gross return proxy. Blended with the equity factor return proportionally by allocation weight.</li>
         <li><strong>Expense Ratio:</strong> Weighted average annual fund cost. Already subtracted from all return estimates shown.</li>
+        <li><strong>Geometric Return &amp; Variance Drag:</strong> The factor model produces an arithmetic mean return. Over time, volatility reduces compounded growth via variance drag: geometric ≈ arithmetic − σ²/2. The 30-year growth projection uses this geometric (CAGR) rate. Portfolio volatility is the weighted average of individual ETF volatilities — a conservative upper bound that ignores diversification benefits.</li>
         <li><strong>This tool is for educational and illustrative purposes only. Not investment advice.</strong></li>
       </ul>
     </div>
@@ -963,6 +964,7 @@ const ETFS = {
     smb:       0.05,   // Fama-French SMB loading
     hml:       0.00,   // Fama-French HML loading
     er:        0.03,   // expense ratio %
+    vol:       16,     // estimated annualized volatility %
     tip:       'Market-cap weighted index covering ~100% of investable US equity market. ~3,525 holdings. No factor tilt.',
   },
   VXUS: {
@@ -976,6 +978,7 @@ const ETFS = {
     smb:       0.05,
     hml:       0.10,
     er:        0.05,
+    vol:       18,
     tip:       'Market-cap weighted index of ~8,700 non-US stocks. ~75% developed, ~25% emerging markets. No active factor tilt.',
   },
   VT: {
@@ -989,6 +992,7 @@ const ETFS = {
     smb:       0.05,
     hml:       0.04,
     er:        0.06,
+    vol:       16,
     tip:       'Market-cap weighted index covering ~10,055 stocks across 50+ countries. ~60% US, ~40% international (developed + emerging). No factor tilt. Single-fund global diversification.',
   },
   AVGE: {
@@ -1002,6 +1006,7 @@ const ETFS = {
     smb:       0.20,
     hml:       0.20,
     er:        0.23,
+    vol:       17,
     tip:       'Fund-of-funds (~10 Avantis ETFs, ~9,100 underlying securities). Largest holding: AVUS ~41%. Light value, size, and profitability tilts globally.',
   },
   AVGV: {
@@ -1015,6 +1020,7 @@ const ETFS = {
     smb:       0.40,
     hml:       0.45,
     er:        0.26,
+    vol:       19,
     tip:       'Fund-of-funds (7 Avantis value ETFs). Largest holding: AVLV ~36%. Concentrated in value factors globally with meaningful small cap and profitability tilts.',
   },
   AVUV: {
@@ -1028,6 +1034,7 @@ const ETFS = {
     smb:       0.82,
     hml:       0.60,
     er:        0.25,
+    vol:       22,
     tip:       'Actively managed. ~775 holdings selected for low P/B and high profitability. Strong SMB (0.82) and HML (0.60) loadings. ~30% Financials.',
   },
   AVDV: {
@@ -1041,6 +1048,7 @@ const ETFS = {
     smb:       0.78,
     hml:       0.35,
     er:        0.36,
+    vol:       22,
     tip:       'Actively managed international small cap value. ~1,686 holdings across developed markets ex-US. Strong SMB (0.78) and HML (0.35) loadings. Complements AVUV for a global SCV allocation.',
   },
   BND: {
@@ -1055,6 +1063,7 @@ const ETFS = {
     smb:       0,
     hml:       0,
     er:        0.03,
+    vol:       5,
     tip:       'Tracks the Bloomberg U.S. Aggregate Bond Index. ~17,000 investment-grade US bonds — Treasuries (~45%), agencies, and corporates. Duration ~6 years. Broad core bond exposure. Fully taxable interest; best held in tax-advantaged accounts.',
   },
 };
@@ -1206,22 +1215,24 @@ function calcStats(p) {
   const total = TICKERS.reduce((s,tk) => s + (w[tk]||0), 0);
   if (total === 0) return null;
 
-  let eySum    = 0;  // portfolio-weighted earnings yields (equity ETFs only)
-  let pbSum    = 0;  // portfolio-weighted P/B (equity ETFs only)
-  let intlPct  = 0;
-  let smb      = 0;
-  let hml      = 0;
-  let er       = 0;
-  let equityW  = 0;  // fraction of portfolio in equity ETFs
-  let bondRet  = 0;  // portfolio-weighted bond yield contribution
+  let eySum       = 0;  // portfolio-weighted earnings yields (equity ETFs only)
+  let pbSum       = 0;  // portfolio-weighted P/B (equity ETFs only)
+  let intlPct     = 0;
+  let smb         = 0;
+  let hml         = 0;
+  let er          = 0;
+  let equityW     = 0;  // fraction of portfolio in equity ETFs
+  let bondRet     = 0;  // portfolio-weighted bond yield contribution
+  let portfolioVol = 0; // weighted-average annualized volatility %
 
   TICKERS.forEach(tk => {
     const frac = (w[tk]||0) / total;
     const e    = ETFS[tk];
-    er      += frac * e.er;
-    intlPct += frac * e.intlPct;
-    smb     += frac * e.smb;
-    hml     += frac * e.hml;
+    er           += frac * e.er;
+    intlPct      += frac * e.intlPct;
+    smb          += frac * e.smb;
+    hml          += frac * e.hml;
+    portfolioVol += frac * e.vol;
     if (e.assetClass === 'fixed') {
       bondRet += frac * e.bondYield;
     } else {
@@ -1242,10 +1253,12 @@ function calcStats(p) {
   const equityRet   = RF + MKT + equityHML * VPREM + equitySMB * SPREM;
   const factorReturn    = equityW * equityRet + bondRet;  // bondRet already portfolio-weighted
   const factorReturnNet = factorReturn - er;
+  // Geometric return ≈ arithmetic − σ²/2  (variance drag; σ in %, so divide by 200)
+  const geometricReturnNet = factorReturnNet - (portfolioVol * portfolioVol) / 200;
   const earningsYieldNet = earningsYield - er;
   const costDrag30 = 10000 * (Math.pow(1 + factorReturn / 100, 30) - Math.pow(1 + factorReturnNet / 100, 30));
 
-  return { pe, pb, earningsYield, earningsYieldNet, intlPct, smb, hml, er, factorReturn, factorReturnNet, costDrag30, total, equityW };
+  return { pe, pb, earningsYield, earningsYieldNet, intlPct, smb, hml, er, factorReturn, factorReturnNet, portfolioVol, geometricReturnNet, costDrag30, total, equityW };
 }
 
 // ================================================================
@@ -1312,17 +1325,33 @@ const STAT_GROUPS = [
     stats: [
       {
         key:    'factorReturnNet',
-        name:   'Factor Model Return',
+        name:   'Arithmetic Return (Factor)',
         desc:   `${RF}% RF + ${MKT}% MKT + HML×${VPREM}% + SMB×${SPREM}% − ER`,
-        tip:    `Fama-French model return net of fees. RF=${RF}%, Market premium=${MKT}%, Value premium=${VPREM}%/unit HML, Size premium=${SPREM}%/unit SMB, minus blended expense ratio. Historical — not guaranteed.`,
+        tip:    `Fama-French arithmetic mean return net of fees. RF=${RF}%, Market premium=${MKT}%, Value premium=${VPREM}%/unit HML, Size premium=${SPREM}%/unit SMB, minus blended expense ratio. This is the arithmetic average — it overstates compounded growth because it ignores volatility drag.`,
+        fmt:    v => v.toFixed(2) + '%',
+        better: 'higher',
+      },
+      {
+        key:    'portfolioVol',
+        name:   'Est. Volatility (σ)',
+        desc:   'Weighted-avg annualized std. deviation',
+        tip:    'Weighted average of individual ETF annualized volatilities. This is a conservative upper bound — actual portfolio vol is lower due to diversification, but correlations are omitted here.',
+        fmt:    v => v.toFixed(1) + '%',
+        better: 'neutral',
+      },
+      {
+        key:    'geometricReturnNet',
+        name:   'Geometric Return (est.)',
+        desc:   'Arithmetic return − σ²/2 · used for growth chart',
+        tip:    'Estimated compound annual growth rate (CAGR), accounting for variance drag: geometric ≈ arithmetic − σ²/2. This is the rate used in the 30-year growth projection. Lower volatility portfolios benefit more from this correction.',
         fmt:    v => v.toFixed(2) + '%',
         better: 'higher',
       },
       {
         key:    'earningsYieldNet',
-        name:   'Earnings Yield',
+        name:   'Earnings Yield (net)',
         desc:   'Earnings yield minus expense ratio',
-        tip:    'Earnings yield (1/PE × 100%) after subtracting the blended expense ratio. Rough long-run real return proxy.',
+        tip:    'Earnings yield (1/PE × 100%) after subtracting the blended expense ratio. Rough long-run real return proxy for the equity sleeve.',
         fmt:    v => v.toFixed(2) + '%',
         better: 'higher',
       },
@@ -1482,9 +1511,10 @@ function renderGrowthChart() {
   const isReal = growthMode === 'real';
   const inflAdj = isReal ? (1 + INFLATION / 100) : 1;
 
+  // Use geometric return (arithmetic − σ²/2) as the compounding rate
   // Real rate = (1 + nominal) / (1 + inflation) - 1
-  const rA = (1 + sA.factorReturnNet / 100) / inflAdj - 1;
-  const rB = (1 + sB.factorReturnNet / 100) / inflAdj - 1;
+  const rA = (1 + sA.geometricReturnNet / 100) / inflAdj - 1;
+  const rB = (1 + sB.geometricReturnNet / 100) / inflAdj - 1;
 
   const dataA = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rA, y));
   const dataB = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rB, y));
@@ -1543,14 +1573,15 @@ function renderGrowthChart() {
   const nameB = document.getElementById('name-b').value.trim() || 'Portfolio B';
   const diff = Math.abs(endA - endB);
   const rateA = (rA * 100).toFixed(2), rateB = (rB * 100).toFixed(2);
-  const modeNote = isReal ? ` real (${INFLATION}% infl. assumed)` : ' nominal';
+  const modeNote = isReal ? ` real (${INFLATION}% infl.)` : ' nominal';
+  const dragNote = `geometric return, variance drag applied`;
   if (diff < 1) {
-    summary.innerHTML = `Both portfolios project the same terminal value (${modeNote.trim()}).`;
+    summary.innerHTML = `Both portfolios project the same terminal value — ${dragNote}${modeNote}.`;
   } else {
     const winner = endA > endB ? nameA : nameB;
     const color  = endA > endB ? 'var(--a-color)' : 'var(--b-color)';
     const dollarNote = isReal ? ' in today\'s dollars' : '';
-    summary.innerHTML = `<strong style="color:${color}">${winner}</strong> projects <strong>${fmt(diff)} more</strong> after 30 years${dollarNote} — ${fmt(START)} starting, ${rateA}% vs ${rateB}%${modeNote} net return.`;
+    summary.innerHTML = `<strong style="color:${color}">${winner}</strong> projects <strong>${fmt(diff)} more</strong> after 30 years${dollarNote} — ${fmt(START)} starting, ${rateA}% vs ${rateB}%${modeNote} CAGR (${dragNote}).`;
   }
 }
 
