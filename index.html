@@ -532,6 +532,25 @@
 
     /* ─── Growth Chart ───────────────────────────────────────── */
     .growth-input-wrap { display: flex; align-items: center; gap: 0.5rem; }
+    .growth-mode-toggle {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .growth-mode-btn {
+      background: var(--surface2);
+      border: none;
+      color: var(--muted);
+      font-size: 0.68rem;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 0.28rem 0.6rem;
+      cursor: pointer;
+      transition: color 0.15s, background 0.15s;
+    }
+    .growth-mode-btn + .growth-mode-btn { border-left: 1px solid var(--border); }
+    .growth-mode-btn.active { background: var(--surface); color: var(--text); }
     .growth-lbl { font-size: 0.68rem; color: var(--muted); }
     .growth-input {
       background: var(--surface2);
@@ -816,12 +835,18 @@
       <div class="stats-card">
         <div class="stats-card-header">
           <span class="stats-card-title">Projected Portfolio Value</span>
-          <div class="growth-input-wrap">
-            <label class="growth-lbl" for="growth-start">Starting $</label>
-            <input class="growth-input" id="growth-start" type="number" min="1000" max="100000000" step="1000" value="10000" oninput="renderGrowthChart()">
+          <div style="display:flex;align-items:center;gap:0.65rem">
+            <div class="growth-mode-toggle">
+              <button class="growth-mode-btn active" id="mode-nominal" onclick="setGrowthMode('nominal')">Nominal</button>
+              <button class="growth-mode-btn"        id="mode-real"    onclick="setGrowthMode('real')">Real</button>
+            </div>
+            <div class="growth-input-wrap">
+              <label class="growth-lbl" for="growth-start">Starting $</label>
+              <input class="growth-input" id="growth-start" type="number" min="1000" max="100000000" step="1000" value="1000000" oninput="renderGrowthChart()">
+            </div>
           </div>
         </div>
-        <svg id="growth-svg" viewBox="0 0 520 220" width="100%" style="display:block"></svg>
+        <svg id="growth-svg" viewBox="0 0 520 300" width="100%" style="display:block"></svg>
         <div id="growth-summary" class="growth-summary"></div>
       </div>
     </div>
@@ -1422,6 +1447,19 @@ function renderRadar() {
 }
 
 // ================================================================
+// GROWTH CHART MODE
+// ================================================================
+const INFLATION = 2.5;  // assumed annual inflation %
+let growthMode = 'nominal';
+
+function setGrowthMode(mode) {
+  growthMode = mode;
+  document.getElementById('mode-nominal').classList.toggle('active', mode === 'nominal');
+  document.getElementById('mode-real').classList.toggle('active', mode === 'real');
+  renderGrowthChart();
+}
+
+// ================================================================
 // RENDER STATS
 // ================================================================
 function renderGrowthChart() {
@@ -1431,7 +1469,7 @@ function renderGrowthChart() {
   const sB = calcStats('b');
 
   const empty = msg => {
-    svg.innerHTML = `<text x="260" y="110" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="var(--muted)">${msg}</text>`;
+    svg.innerHTML = `<text x="260" y="150" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="var(--muted)">${msg}</text>`;
     summary.innerHTML = '';
   };
 
@@ -1439,15 +1477,19 @@ function renderGrowthChart() {
     return empty('Set allocations above to see projection.');
   }
 
-  const START = Math.max(1000, parseFloat(document.getElementById('growth-start').value) || 10000);
+  const START = Math.max(1000, parseFloat(document.getElementById('growth-start').value) || 1000000);
   const YEARS = 30;
-  const rA = sA.factorReturnNet / 100;
-  const rB = sB.factorReturnNet / 100;
+  const isReal = growthMode === 'real';
+  const inflAdj = isReal ? (1 + INFLATION / 100) : 1;
+
+  // Real rate = (1 + nominal) / (1 + inflation) - 1
+  const rA = (1 + sA.factorReturnNet / 100) / inflAdj - 1;
+  const rB = (1 + sB.factorReturnNet / 100) / inflAdj - 1;
 
   const dataA = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rA, y));
   const dataB = Array.from({ length: YEARS + 1 }, (_, y) => START * Math.pow(1 + rB, y));
 
-  const vW = 520, vH = 220;
+  const vW = 520, vH = 300;
   const PAD = { top: 18, right: 80, bottom: 36, left: 62 };
   const plotW = vW - PAD.left - PAD.right;
   const plotH = vH - PAD.top - PAD.bottom;
@@ -1500,12 +1542,15 @@ function renderGrowthChart() {
   const nameA = document.getElementById('name-a').value.trim() || 'Portfolio A';
   const nameB = document.getElementById('name-b').value.trim() || 'Portfolio B';
   const diff = Math.abs(endA - endB);
+  const rateA = (rA * 100).toFixed(2), rateB = (rB * 100).toFixed(2);
+  const modeNote = isReal ? ` real (${INFLATION}% infl. assumed)` : ' nominal';
   if (diff < 1) {
-    summary.innerHTML = 'Both portfolios project the same terminal value.';
+    summary.innerHTML = `Both portfolios project the same terminal value (${modeNote.trim()}).`;
   } else {
     const winner = endA > endB ? nameA : nameB;
     const color  = endA > endB ? 'var(--a-color)' : 'var(--b-color)';
-    summary.innerHTML = `<strong style="color:${color}">${winner}</strong> projects <strong>${fmt(diff)} more</strong> after 30 years — ${fmt(START)} starting, ${sA.factorReturnNet.toFixed(2)}% vs ${sB.factorReturnNet.toFixed(2)}% net annual return.`;
+    const dollarNote = isReal ? ' in today\'s dollars' : '';
+    summary.innerHTML = `<strong style="color:${color}">${winner}</strong> projects <strong>${fmt(diff)} more</strong> after 30 years${dollarNote} — ${fmt(START)} starting, ${rateA}% vs ${rateB}%${modeNote} net return.`;
   }
 }
 
