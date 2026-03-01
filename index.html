@@ -928,7 +928,7 @@
         <li><strong>Earnings Yield:</strong> 1/PE × 100%. A commonly used simplified proxy for expected real returns over the long run.</li>
         <li><strong>Value Tilt (HML):</strong> Fama-French High-Minus-Low factor loading. 0 ≈ market-cap blend; higher = more tilted toward value stocks.</li>
         <li><strong>Size Tilt (SMB):</strong> Fama-French Small-Minus-Big factor loading. 0 ≈ large-cap weighted; higher = more tilted toward small-cap stocks.</li>
-        <li><strong>Factor Model Return Estimate (equities):</strong> = 4.0% (risk-free) + 4.5% (equity market premium) + HML × 3.5% (value premium) + SMB × 2.5% (size premium). Based on historical Fama-French factor research. Factor premiums are not guaranteed to persist in the future.</li>
+        <li><strong>Factor Model Return Estimate (equities):</strong> = RF (4.0%) + CAPE-adjusted ERP + HML × 3.5% (value premium) + SMB × 2.5% (size premium). The equity risk premium is derived from current valuations: ERP = 100/CAPE + 4.5% long-run nominal EPS growth − RF. US equities use Shiller CAPE ≈ 37 (ERP ≈ 3.2%); international developed markets use CAPE ≈ 16 (ERP ≈ 6.75%). The ERP is blended by each portfolio's US vs. international equity weight. Factor premiums are not guaranteed to persist in the future.</li>
         <li><strong>Fixed Income Return Estimate (BND):</strong> Uses the current SEC yield as the expected gross return proxy. Blended with the equity factor return proportionally by allocation weight.</li>
         <li><strong>Expense Ratio:</strong> Weighted average annual fund cost. Already subtracted from all return estimates shown.</li>
         <li><strong>Portfolio Volatility:</strong> Computed via the Markowitz formula — σ_p = √(ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ) — using approximate pairwise ETF correlations. This properly captures diversification: a blended portfolio is less volatile than the sum of its parts.</li>
@@ -1251,10 +1251,12 @@ function refreshTotal(p) {
 // ================================================================
 // CALC PORTFOLIO STATS
 // ================================================================
-const RF   = 4.0;   // risk-free rate %
-const MKT  = 4.5;   // equity market premium %
-const VPREM = 3.5;  // value premium per unit HML %
-const SPREM = 2.5;  // size premium per unit SMB %
+const RF         = 4.0;   // risk-free rate (10-yr Treasury proxy), %
+const CAPE_US    = 37;    // Shiller CAPE for US equities (Feb 2026)
+const CAPE_INTL  = 16;    // Approx CAPE for international developed markets (Feb 2026)
+const EPS_GROWTH = 4.5;   // Long-run nominal EPS growth, % (real GDP ~2.5% + inflation ~2%)
+const VPREM = 3.5;        // value premium per unit HML %
+const SPREM = 2.5;        // size premium per unit SMB %
 
 // Pairwise annual-return correlations (upper triangle, TICKERS order).
 // Used for Markowitz portfolio variance: σ_p² = ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ
@@ -1325,9 +1327,15 @@ function calcStats(p) {
   const earningsYield = eySum * 100;  // portfolio-level equity earnings yield contribution
 
   // Equity factor return (per unit invested in equities), then blended with bond yield
-  const equityHML   = equityW > 0 ? hml / equityW : 0;
-  const equitySMB   = equityW > 0 ? smb / equityW : 0;
-  const equityRet   = RF + MKT + equityHML * VPREM + equitySMB * SPREM;
+  const equityHML      = equityW > 0 ? hml / equityW : 0;
+  const equitySMB      = equityW > 0 ? smb / equityW : 0;
+  // CAPE-adjusted ERP: earnings yield from current CAPE + long-run EPS growth − RF
+  // Blended by portfolio's US vs international equity split
+  const intlEquityFrac = equityW > 0 ? (intlPct / 100) / equityW : 0;
+  const erpUS          = Math.max(0, 100 / CAPE_US   + EPS_GROWTH - RF);
+  const erpIntl        = Math.max(0, 100 / CAPE_INTL + EPS_GROWTH - RF);
+  const mkt            = (1 - intlEquityFrac) * erpUS + intlEquityFrac * erpIntl;
+  const equityRet      = RF + mkt + equityHML * VPREM + equitySMB * SPREM;
   const factorReturn    = equityW * equityRet + bondRet;  // bondRet already portfolio-weighted
   const factorReturnNet = factorReturn - er;
   // Geometric return ≈ arithmetic − σ²/2  (variance drag; σ in %, so divide by 200)
@@ -1403,8 +1411,8 @@ const STAT_GROUPS = [
       {
         key:    'factorReturnNet',
         name:   'Arithmetic Return (Factor)',
-        desc:   `${RF}% RF + ${MKT}% MKT + HML×${VPREM}% + SMB×${SPREM}% − ER`,
-        tip:    `Fama-French arithmetic mean return net of fees. RF=${RF}%, Market premium=${MKT}%, Value premium=${VPREM}%/unit HML, Size premium=${SPREM}%/unit SMB, minus blended expense ratio. This is the arithmetic average — it overstates compounded growth because it ignores volatility drag.`,
+        desc:   `${RF}% RF + CAPE-adj. ERP + HML×${VPREM}% + SMB×${SPREM}% − ER`,
+        tip:    `Fama-French arithmetic mean return net of fees. Base equity return = RF (${RF}%) + CAPE-adjusted ERP: 100/CAPE + ${EPS_GROWTH}% EPS growth − RF, blended for US (CAPE≈${CAPE_US}) vs. international (CAPE≈${CAPE_INTL}) exposure. Value premium=${VPREM}%/unit HML, Size premium=${SPREM}%/unit SMB, minus blended expense ratio. This is the arithmetic average — it overstates compounded growth because it ignores volatility drag.`,
         fmt:    v => v.toFixed(2) + '%',
         better: 'higher',
       },
