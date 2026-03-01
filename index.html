@@ -717,7 +717,6 @@
     .tey-brkt-income { font-size: 0.63rem; color: var(--muted); margin-top: 2px; }
     .tey-val  { font-family: 'SF Mono','Fira Code',monospace; font-size: 0.85rem; font-weight: 700; }
     .tey-sub  { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
-    .tey-table tr.tey-row-winner td { background: rgba(63,185,80,0.0); }
     .tey-cell-winner .tey-val { color: var(--green); }
   </style>
 </head>
@@ -1138,7 +1137,7 @@ function onSlider(p, tk, raw) {
   const num = document.getElementById(`nu-${p}-${tk}`);
   if (num) num.value = v;
   refreshTotal(p);
-  renderStats();
+  renderAll();
 }
 
 function onNumber(p, tk, raw) {
@@ -1147,7 +1146,7 @@ function onNumber(p, tk, raw) {
   const sl = document.getElementById(`sl-${p}-${tk}`);
   if (sl) sl.value = v;
   refreshTotal(p);
-  renderStats();
+  renderAll();
 }
 
 function applyPreset(p, key) {
@@ -1162,7 +1161,7 @@ function applyPreset(p, key) {
   });
   document.getElementById(`preset-${p}`).value = '';
   refreshTotal(p);
-  renderStats();
+  renderAll();
 }
 
 function normalizePortfolio(p) {
@@ -1184,7 +1183,7 @@ function normalizePortfolio(p) {
     if (nu) nu.value = state[p][tk];
   });
   refreshTotal(p);
-  renderStats();
+  renderAll();
 }
 
 // ================================================================
@@ -1585,7 +1584,7 @@ function renderGrowthChart() {
   }
 }
 
-function renderStats() {
+function renderAll() {
   renderRadar();
   renderGrowthChart();
 
@@ -1653,29 +1652,15 @@ function renderStats() {
 }
 
 // ================================================================
-// ETF MODAL
+// MODAL
 // ================================================================
-function openEtfModal(tk) {
-  const etf = ETFS[tk];
-  const isFixed = etf.assetClass === 'fixed';
-  document.getElementById('modal-ticker').textContent = tk;
-  document.getElementById('modal-name').textContent   = etf.name;
-  document.getElementById('modal-desc').textContent   = etf.tip;
-  document.getElementById('modal-stats').innerHTML = [
-    isFixed
-      ? { val: etf.bondYield.toFixed(2) + '%', lbl: 'SEC Yield'  }
-      : { val: etf.pe.toFixed(1) + 'x',        lbl: 'P/E Ratio'  },
-    isFixed
-      ? { val: '—',                             lbl: 'P/B Ratio'  }
-      : { val: etf.pb.toFixed(2) + 'x',        lbl: 'P/B Ratio'  },
-    isFixed
-      ? { val: '—',                             lbl: 'Earn. Yield'}
-      : { val: (100/etf.pe).toFixed(2) + '%',  lbl: 'Earn. Yield'},
-    { val: etf.smb.toFixed(2),   lbl: 'SMB'        },
-    { val: etf.hml.toFixed(2),   lbl: 'HML'        },
-    { val: etf.intlPct + '%',    lbl: "Int'l %"    },
-    { val: etf.er.toFixed(3) + '%', lbl: 'Exp. Ratio' },
-  ].map(s => `<div class="modal-stat"><div class="modal-stat-val">${s.val}</div><div class="modal-stat-lbl">${s.lbl}</div></div>`).join('');
+function openModal(ticker, name, tip, stats) {
+  document.getElementById('modal-ticker').textContent = ticker;
+  document.getElementById('modal-name').textContent   = name;
+  document.getElementById('modal-desc').textContent   = tip;
+  document.getElementById('modal-stats').innerHTML = stats
+    .map(s => `<div class="modal-stat"><div class="modal-stat-val">${s.val}</div><div class="modal-stat-lbl">${s.lbl}</div></div>`)
+    .join('');
   document.getElementById('etf-modal-backdrop').classList.add('open');
 }
 
@@ -1688,18 +1673,31 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') document.getElementById('etf-modal-backdrop').classList.remove('open');
 });
 
+function openEtfModal(tk) {
+  const etf = ETFS[tk];
+  const isFixed = etf.assetClass === 'fixed';
+  openModal(tk, etf.name, etf.tip, [
+    isFixed ? { val: etf.bondYield.toFixed(2) + '%', lbl: 'SEC Yield'   }
+            : { val: etf.pe.toFixed(1) + 'x',        lbl: 'P/E Ratio'   },
+    isFixed ? { val: '—',                             lbl: 'P/B Ratio'   }
+            : { val: etf.pb.toFixed(2) + 'x',        lbl: 'P/B Ratio'   },
+    isFixed ? { val: '—',                             lbl: 'Earn. Yield' }
+            : { val: (100/etf.pe).toFixed(2) + '%',  lbl: 'Earn. Yield' },
+    { val: etf.smb.toFixed(2),      lbl: 'SMB'        },
+    { val: etf.hml.toFixed(2),      lbl: 'HML'        },
+    { val: etf.intlPct + '%',       lbl: "Int'l %"    },
+    { val: etf.er.toFixed(3) + '%', lbl: 'Exp. Ratio' },
+  ]);
+}
+
 function openTeyModal(i) {
   const f = TEY_FUNDS[i];
-  document.getElementById('modal-ticker').textContent = f.ticker;
-  document.getElementById('modal-name').textContent   = f.name;
-  document.getElementById('modal-desc').textContent   = f.tip;
-  document.getElementById('modal-stats').innerHTML = [
-    { val: f.yield.toFixed(2) + '%',  lbl: f.category === 'mmf' ? '7-Day Yield' : 'SEC Yield' },
-    { val: f.er.toFixed(2) + '%',     lbl: 'Exp. Ratio'  },
+  openModal(f.ticker, f.name, f.tip, [
+    { val: f.yield.toFixed(2) + '%',   lbl: f.category === 'mmf' ? '7-Day Yield' : 'SEC Yield' },
+    { val: f.er.toFixed(2) + '%',      lbl: 'Exp. Ratio'     },
     { val: f.taxExempt ? 'Yes' : 'No', lbl: 'Fed Tax-Exempt' },
     { val: f.category === 'etf' ? 'Bond ETF' : 'Money Market', lbl: 'Type' },
-  ].map(s => `<div class="modal-stat"><div class="modal-stat-val">${s.val}</div><div class="modal-stat-lbl">${s.lbl}</div></div>`).join('');
-  document.getElementById('etf-modal-backdrop').classList.add('open');
+  ]);
 }
 
 // ================================================================
@@ -1854,10 +1852,10 @@ function init() {
   buildRows('b');
   refreshTotal('a');
   refreshTotal('b');
-  renderStats();
+  renderAll();
 
-  document.getElementById('name-a').addEventListener('input', renderStats);
-  document.getElementById('name-b').addEventListener('input', renderStats);
+  document.getElementById('name-a').addEventListener('input', renderAll);
+  document.getElementById('name-b').addEventListener('input', renderAll);
 
   buildTeyFundCards();
   renderTeyTable();
