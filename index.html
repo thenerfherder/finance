@@ -881,8 +881,8 @@
           <span class="stats-card-title">Projected Portfolio Value</span>
           <div style="display:flex;align-items:center;gap:0.65rem">
             <div class="growth-mode-toggle">
-              <button class="growth-mode-btn active" id="mode-nominal" onclick="setGrowthMode('nominal')">Nominal</button>
-              <button class="growth-mode-btn"        id="mode-real"    onclick="setGrowthMode('real')">Real</button>
+              <button class="growth-mode-btn"        id="mode-nominal" onclick="setGrowthMode('nominal')">Nominal</button>
+              <button class="growth-mode-btn active" id="mode-real"    onclick="setGrowthMode('real')">Real</button>
             </div>
             <div class="growth-input-wrap">
               <label class="growth-lbl" for="growth-start">Starting $</label>
@@ -1569,7 +1569,7 @@ function renderRadar() {
 // GROWTH CHART MODE
 // ================================================================
 const INFLATION = 2.5;  // assumed annual inflation %
-let growthMode = 'nominal';
+let growthMode = 'real';
 
 function setGrowthMode(mode) {
   growthMode = mode;
