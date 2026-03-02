@@ -898,6 +898,15 @@
               <label class="growth-lbl" for="growth-contrib">±$/mo</label>
               <input class="growth-input" id="growth-contrib" type="number" min="-50000" max="50000" step="100" value="0" oninput="renderGrowthChart()" style="width:80px" title="Monthly contribution (+) or withdrawal (−)">
             </div>
+            <div style="width:1px;height:1.2rem;background:var(--border);margin:0 0.1rem"></div>
+            <div class="growth-input-wrap">
+              <label class="growth-lbl" for="infl-rate">Infl %</label>
+              <input class="growth-input" id="infl-rate" type="number" min="0" max="15" step="0.1" value="2.5" oninput="renderAll()" style="width:52px" title="Assumed annual inflation rate (used for Real mode)">
+            </div>
+            <div class="growth-input-wrap">
+              <label class="growth-lbl" for="rf-rate">Rf %</label>
+              <input class="growth-input" id="rf-rate" type="number" min="0" max="15" step="0.1" value="4.0" oninput="renderAll()" style="width:52px" title="Risk-free rate (10-yr Treasury proxy) used in factor return estimates">
+            </div>
           </div>
         </div>
         <svg id="growth-svg" viewBox="0 0 520 300" width="100%" style="display:block"></svg>
@@ -1306,6 +1315,7 @@ function getCorr(a, b) {
 }
 
 function calcStats(p) {
+  const RF    = parseFloat(document.getElementById('rf-rate')?.value) || 4.0;
   const w     = state[p];
   const total = TICKERS.reduce((s,tk) => s + (w[tk]||0), 0);
   if (total === 0) return null;
@@ -1624,8 +1634,9 @@ function renderGrowthChart() {
   const START  = Math.max(1000, parseFloat(document.getElementById('growth-start').value) || 1000000);
   const CONTRIB = parseFloat(document.getElementById('growth-contrib').value) || 0;
   const YEARS  = 30;
-  const isReal = growthMode === 'real';
-  const inflAdj = isReal ? (1 + INFLATION / 100) : 1;
+  const isReal   = growthMode === 'real';
+  const INFLATION = parseFloat(document.getElementById('infl-rate')?.value) || 2.5;
+  const inflAdj  = isReal ? (1 + INFLATION / 100) : 1;
 
   // Use geometric return (arithmetic − σ²/2) as the compounding rate
   // Real rate = (1 + nominal) / (1 + inflation) - 1
@@ -2011,8 +2022,12 @@ function copyShareLink() {
   params.set('gm', growthMode);
   const gs = document.getElementById('growth-start').value;
   const gc = document.getElementById('growth-contrib').value;
+  const ir = document.getElementById('infl-rate').value;
+  const rr = document.getElementById('rf-rate').value;
   if (gs && gs !== '1000000') params.set('gs', gs);
   if (gc && gc !== '0') params.set('gc', gc);
+  if (ir && ir !== '2.5') params.set('ir', ir);
+  if (rr && rr !== '4') params.set('rr', rr);
   const url = `${location.origin}${location.pathname}?${params}`;
   const btn = document.getElementById('copy-link-btn');
   navigator.clipboard.writeText(url).then(() => {
@@ -2045,6 +2060,8 @@ function applyURLState(params) {
   }
   if (params.has('gs')) document.getElementById('growth-start').value = params.get('gs');
   if (params.has('gc')) document.getElementById('growth-contrib').value = params.get('gc');
+  if (params.has('ir')) document.getElementById('infl-rate').value = params.get('ir');
+  if (params.has('rr')) document.getElementById('rf-rate').value   = params.get('rr');
   return true;
 }
 
@@ -2060,6 +2077,8 @@ function saveState() {
       advisorA: document.getElementById('advisor-a')?.checked,
       advisorB: document.getElementById('advisor-b')?.checked,
       growthMode,
+      inflRate: document.getElementById('infl-rate')?.value,
+      rfRate:   document.getElementById('rf-rate')?.value,
     }));
   } catch(e) {}
 }
@@ -2080,6 +2099,8 @@ function loadState() {
       document.getElementById('mode-nominal').classList.toggle('active', growthMode === 'nominal');
       document.getElementById('mode-real').classList.toggle('active', growthMode === 'real');
     }
+    if (s.inflRate != null) document.getElementById('infl-rate').value = s.inflRate;
+    if (s.rfRate   != null) document.getElementById('rf-rate').value   = s.rfRate;
   } catch(e) {}
 }
 
