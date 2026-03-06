@@ -1474,7 +1474,10 @@ function calcStats(p) {
   // Geometric return ≈ arithmetic − σ²/2  (variance drag; σ in %, so divide by 200)
   const geometricReturnNet = factorReturnNet - (portfolioVol * portfolioVol) / 200;
   const earningsYieldNet = earningsYield - er;
-  const costDrag30 = 1000000 * (Math.pow(1 + factorReturn / 100, 30) - Math.pow(1 + factorReturnNet / 100, 30));
+  // Use geometric returns for both sides so volatility drag doesn't inflate the fee cost.
+  // Geometric gross = geometric net + total fees (er); the vol drag term cancels out.
+  const geometricGross = geometricReturnNet + er;
+  const costDrag30 = 1000000 * (Math.pow(1 + geometricGross / 100, 30) - Math.pow(1 + geometricReturnNet / 100, 30));
 
   return { pe, pb, earningsYield, earningsYieldNet, intlPct: intlPctEquity, emPct: emPctEquity, smb, hml, er, factorReturn, factorReturnNet, portfolioVol, geometricReturnNet, costDrag30, total, equityW };
 }
@@ -1592,7 +1595,7 @@ const STAT_GROUPS = [
         key:    'er',
         name:   'Expense Ratio',
         desc:   'Weighted avg annual fund cost',
-        tip:    'Blended weighted-average fund expense ratio. Includes an additional +1.000% AUM advisory fee when "Advisor +1%" is toggled on. Subtract from expected returns for net estimates.',
+        tip:    'Blended weighted-average fund expense ratio. When the Advisor toggle is on, the configured AUM fee is added on top. Subtract from expected returns for net estimates.',
         fmt:    v => v.toFixed(3) + '%',
         better: 'lower',
       },
