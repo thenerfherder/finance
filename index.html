@@ -454,9 +454,20 @@
       flex: 1;
       height: 10px;
       display: flex;
+      position: relative;
     }
     .bfly-half.left  { justify-content: flex-end; }
     .bfly-half.right { justify-content: flex-start; }
+    .bfly-mkt-tick {
+      position: absolute;
+      top: -3px;
+      width: 1px;
+      height: 16px;
+      background: var(--text);
+      opacity: 0.25;
+      border-radius: 1px;
+      pointer-events: none;
+    }
     .bfly-bar {
       height: 100%;
       min-width: 2px;
@@ -1450,7 +1461,10 @@ function calcStats(p) {
   const equitySMB      = equityW > 0 ? smb / equityW : 0;
   // CAPE-adjusted ERP: earnings yield from current CAPE + long-run EPS growth − RF
   // Blended by portfolio's US vs international equity split
-  const intlEquityFrac = equityW > 0 ? (intlPct / 100) / equityW : 0;
+  const intlEquityFrac  = equityW > 0 ? (intlPct / 100) / equityW : 0;
+  // Normalize geographic exposure to equity sleeve (not total portfolio)
+  const intlPctEquity   = equityW > 0 ? intlPct / equityW : 0;
+  const emPctEquity     = equityW > 0 ? emPct   / equityW : 0;
   const erpUS          = Math.max(0, 100 / CAPE_US   + EPS_GROWTH - RF);
   const erpIntl        = Math.max(0, 100 / CAPE_INTL + EPS_GROWTH - RF);
   const mkt            = (1 - intlEquityFrac) * erpUS + intlEquityFrac * erpIntl;
@@ -1462,7 +1476,7 @@ function calcStats(p) {
   const earningsYieldNet = earningsYield - er;
   const costDrag30 = 1000000 * (Math.pow(1 + factorReturn / 100, 30) - Math.pow(1 + factorReturnNet / 100, 30));
 
-  return { pe, pb, earningsYield, earningsYieldNet, intlPct, emPct, smb, hml, er, factorReturn, factorReturnNet, portfolioVol, geometricReturnNet, costDrag30, total, equityW };
+  return { pe, pb, earningsYield, earningsYieldNet, intlPct: intlPctEquity, emPct: emPctEquity, smb, hml, er, factorReturn, factorReturnNet, portfolioVol, geometricReturnNet, costDrag30, total, equityW };
 }
 
 // ================================================================
@@ -1517,17 +1531,19 @@ const STAT_GROUPS = [
       {
         key:    'intlPct',
         name:   'International Allocation',
-        desc:   `Weighted % in ex-US markets · global mkt wt ≈ ${INTL_MKT_WT}%`,
-        tip:    `Percentage of portfolio in non-US markets (developed + emerging). Global market-cap weight is ~${INTL_MKT_WT}% ex-US (FTSE Global All Cap). Overweight = more international than the world market; underweight = more US-heavy. VXUS = 97%, VTI = 0%.`,
-        fmt:    v => { const d = v - INTL_MKT_WT; return v.toFixed(1) + '% (' + (d >= 0 ? '+' : '') + d.toFixed(0) + '% vs mkt)'; },
+        desc:   `% of equity sleeve in ex-US markets · mkt wt ≈ ${INTL_MKT_WT}%`,
+        tip:    `Percentage of the equity portion in non-US markets (developed + emerging). Normalized to equity only — bonds are excluded from the denominator. Global market-cap weight is ~${INTL_MKT_WT}% ex-US (FTSE Global All Cap). The vertical line on the bar marks market weight. Overweight = bar past the line; underweight = bar before it. VXUS = 97%, VTI = 0%.`,
+        fmt:    v => v.toFixed(1) + '%',
+        mktWt:  INTL_MKT_WT,
         better: 'neutral',
       },
       {
         key:    'emPct',
         name:   'Emerging Markets',
-        desc:   `Weighted % in EM (subset of Intl) · global mkt wt ≈ ${EM_MKT_WT}%`,
-        tip:    `Percentage of portfolio in emerging markets (China, India, Brazil, Taiwan, etc.). Included within the International Allocation figure above. Global market-cap weight is ~${EM_MKT_WT}% EM (FTSE Global All Cap). VXUS ≈ 25% EM, VT ≈ 11% EM, AVDV = 0% (developed only), AVUV/VTI = 0% (US only). Approximate — verify on fund fact sheets.`,
-        fmt:    v => { const d = v - EM_MKT_WT; return v.toFixed(1) + '% (' + (d >= 0 ? '+' : '') + d.toFixed(0) + '% vs mkt)'; },
+        desc:   `% of equity sleeve in EM (subset of Intl) · mkt wt ≈ ${EM_MKT_WT}%`,
+        tip:    `Percentage of the equity portion in emerging markets (China, India, Brazil, Taiwan, etc.). Normalized to equity only — bonds are excluded from the denominator. Included within the International Allocation figure above. Global market-cap weight is ~${EM_MKT_WT}% EM (FTSE Global All Cap). The vertical line marks market weight. VXUS ≈ 25% EM, VT ≈ 11% EM, AVDV = 0% (developed only), AVUV/VTI = 0% (US only).`,
+        fmt:    v => v.toFixed(1) + '%',
+        mktWt:  EM_MKT_WT,
         better: 'neutral',
       },
     ],
@@ -1912,9 +1928,10 @@ function renderAll() {
       // Butterfly bar widths (each half max 90px); treat null as 0
       const vaNum = va ?? 0;
       const vbNum = vb ?? 0;
-      const maxV = Math.max(Math.abs(vaNum), Math.abs(vbNum), 0.001);
+      const maxV = Math.max(Math.abs(vaNum), Math.abs(vbNum), def.mktWt ?? 0, 0.001);
       const pctA = (vaNum / maxV) * 90;
       const pctB = (vbNum / maxV) * 90;
+      const tickPx = def.mktWt != null ? (def.mktWt / maxV) * 90 : null;
 
       // Better badge (skip if either value is null)
       let badgeA = '', badgeB = '';
@@ -1934,10 +1951,12 @@ function renderAll() {
           <div class="bfly">
             <div class="bfly-half left">
               <div class="bfly-bar a" style="width:${pctA}px"></div>
+              ${tickPx != null ? `<div class="bfly-mkt-tick" style="right:${tickPx}px"></div>` : ''}
             </div>
             <div class="bfly-ctr"></div>
             <div class="bfly-half right">
               <div class="bfly-bar b" style="width:${pctB}px"></div>
+              ${tickPx != null ? `<div class="bfly-mkt-tick" style="left:${tickPx}px"></div>` : ''}
             </div>
           </div>
           <div class="stat-val b">${def.fmt(vb)}${badgeB}</div>
