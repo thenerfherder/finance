@@ -1096,6 +1096,7 @@ const ETFS = {
     pe:        26.0,   // trailing P/E (harmonic mean across holdings)
     pb:        4.00,   // price-to-book, approximate
     intlPct:   0,      // % international (ex-US)
+    emPct:     0,      // % emerging markets (subset of intlPct)
     smb:       0.05,   // Fama-French SMB loading
     hml:       0.00,   // Fama-French HML loading
     er:        0.03,   // expense ratio %
@@ -1110,6 +1111,7 @@ const ETFS = {
     pe:        15.9,
     pb:        1.80,
     intlPct:   97,
+    emPct:     25,     // ~25% EM per Vanguard fund page
     smb:       0.05,
     hml:       0.10,
     er:        0.05,
@@ -1124,6 +1126,7 @@ const ETFS = {
     pe:        22.7,
     pb:        3.10,
     intlPct:   40,
+    emPct:     11,     // ~40% intl × ~27% EM within intl ≈ 11% of total
     smb:       0.05,
     hml:       0.04,
     er:        0.06,
@@ -1138,6 +1141,7 @@ const ETFS = {
     pe:        18.5,
     pb:        2.70,
     intlPct:   32,
+    emPct:     10,     // ~32% intl, ~30% of that in EM (includes AVEM sleeve) ≈ 10%
     smb:       0.20,
     hml:       0.20,
     er:        0.23,
@@ -1152,6 +1156,7 @@ const ETFS = {
     pe:        14.0,
     pb:        1.85,
     intlPct:   40,
+    emPct:     12,     // ~40% intl, ~30% of that in EM ≈ 12%
     smb:       0.40,
     hml:       0.45,
     er:        0.26,
@@ -1166,6 +1171,7 @@ const ETFS = {
     pe:        13.4,
     pb:        1.75,
     intlPct:   0,
+    emPct:     0,      // US only
     smb:       0.82,
     hml:       0.60,
     er:        0.25,
@@ -1180,6 +1186,7 @@ const ETFS = {
     pe:        14.1,
     pb:        1.05,
     intlPct:   99,
+    emPct:     0,      // developed markets ex-US only, no EM
     smb:       0.78,
     hml:       0.35,
     er:        0.36,
@@ -1195,6 +1202,7 @@ const ETFS = {
     pe:        null,   // N/A for bonds
     pb:        null,   // N/A for bonds
     intlPct:   0,
+    emPct:     0,
     smb:       0,
     hml:       0,
     er:        0.03,
@@ -1392,6 +1400,7 @@ function calcStats(p) {
   let eySum    = 0;  // portfolio-weighted earnings yields (equity ETFs only)
   let pbSum    = 0;  // portfolio-weighted P/B (equity ETFs only)
   let intlPct  = 0;
+  let emPct    = 0;
   let smb      = 0;
   let hml      = 0;
   let er       = 0;
@@ -1403,6 +1412,7 @@ function calcStats(p) {
     const e    = ETFS[tk];
     er      += frac * e.er;
     intlPct += frac * e.intlPct;
+    emPct   += frac * e.emPct;
     smb     += frac * e.smb;
     hml     += frac * e.hml;
     if (e.assetClass === 'fixed') {
@@ -1450,7 +1460,7 @@ function calcStats(p) {
   const earningsYieldNet = earningsYield - er;
   const costDrag30 = 1000000 * (Math.pow(1 + factorReturn / 100, 30) - Math.pow(1 + factorReturnNet / 100, 30));
 
-  return { pe, pb, earningsYield, earningsYieldNet, intlPct, smb, hml, er, factorReturn, factorReturnNet, portfolioVol, geometricReturnNet, costDrag30, total, equityW };
+  return { pe, pb, earningsYield, earningsYieldNet, intlPct, emPct, smb, hml, er, factorReturn, factorReturnNet, portfolioVol, geometricReturnNet, costDrag30, total, equityW };
 }
 
 // ================================================================
@@ -1507,6 +1517,14 @@ const STAT_GROUPS = [
         name:   'International Allocation',
         desc:   'Weighted % in ex-US markets',
         tip:    'Percentage of portfolio in non-US markets (developed + emerging). VXUS = 97%, VTI = 0%.',
+        fmt:    v => v.toFixed(1) + '%',
+        better: 'neutral',
+      },
+      {
+        key:    'emPct',
+        name:   'Emerging Markets',
+        desc:   'Weighted % in EM (subset of International)',
+        tip:    'Percentage of portfolio in emerging markets (China, India, Brazil, Taiwan, etc.). Included within the International Allocation figure above. VXUS ≈ 25% EM, VT ≈ 11% EM, AVDV = 0% (developed only), AVUV/VTI = 0% (US only). Approximate — verify on fund fact sheets.',
         fmt:    v => v.toFixed(1) + '%',
         better: 'neutral',
       },
