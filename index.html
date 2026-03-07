@@ -24,14 +24,14 @@
 </header>
 
 <nav class="tab-bar">
-  <button class="tab-btn active" data-tab="allocation">Asset Allocation</button>
+  <button class="tab-btn active" data-tab="risk">Risk Profile</button>
+  <button class="tab-btn"        data-tab="allocation">Asset Allocation</button>
   <button class="tab-btn"        data-tab="tey">Tax Equivalent Yield</button>
-  <button class="tab-btn"        data-tab="risk">Risk Profile</button>
 </nav>
 
 <main>
 
-<div id="tab-allocation" class="tab-panel active">
+<div id="tab-allocation" class="tab-panel">
 
   <!-- ── Portfolios ───────────────────────────────────────────── -->
   <div class="section-label">Portfolios</div>
@@ -224,22 +224,22 @@
 
 </div><!-- /tab-tey -->
 
-<div id="tab-risk" class="tab-panel">
+<div id="tab-risk" class="tab-panel active">
 
   <!-- ── Snapshot + Slider ──────────────────────────────── -->
   <div class="section-label">Risk Profile <span class="section-label-note">— Vanguard historical data, 1926–2024 · US stocks &amp; US bonds</span></div>
   <div class="stats-card" style="margin-bottom:1.5rem">
     <div class="stats-card-header">
       <span class="stats-card-title">Portfolio Risk Snapshot</span>
-      <span id="risk-snap-equity" style="font-size:0.82rem;color:var(--muted)">60% Stocks / 40% Bonds</span>
+      <span id="risk-snap-equity" style="font-size:0.82rem;color:var(--muted)">80% Stocks / 20% Bonds</span>
     </div>
     <div class="risk-snapshot-body">
       <div class="risk-slider-ends">
         <span>100% Bonds</span>
         <span>100% Stocks</span>
       </div>
-      <span id="risk-equity-display">60% Stocks / 40% Bonds</span>
-      <input type="range" id="risk-equity-slider" min="0" max="100" step="10" value="60">
+      <span id="risk-equity-display">80% Stocks / 20% Bonds</span>
+      <input type="range" id="risk-equity-slider" min="0" max="100" step="10" value="80">
       <div class="risk-stats-grid">
         <div class="risk-stat-box">
           <div class="risk-stat-label">Avg Annual Return</div>

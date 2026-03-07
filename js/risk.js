@@ -23,7 +23,7 @@ const RISK_DATA = [
   { equity: 100, ret: 10.4, vol: 15.8, worstYr: -43.1, bestYr:  54.2 },
 ];
 
-let _selectedEquity = 60;
+let _selectedEquity = 80;
 
 const FONT = "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif";
 
