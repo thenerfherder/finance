@@ -21,7 +21,6 @@ export function buildTeyFundCards() {
   ];
 
   groups.forEach(grp => {
-    const funds = TEY_FUNDS.filter(f => f.category === grp.key);
     const group = document.createElement('div');
     group.className = 'tey-fund-group';
     group.innerHTML = `<div class="tey-fund-group-lbl">${grp.label}</div>`;
@@ -29,8 +28,8 @@ export function buildTeyFundCards() {
     const grid = document.createElement('div');
     grid.className = 'tey-fund-grid';
 
-    funds.forEach(f => {
-      const i        = TEY_FUNDS.indexOf(f);
+    TEY_FUNDS.forEach((f, i) => {
+      if (f.category !== grp.key) return;
       const badgeCls = f.taxExempt ? 'exempt' : 'taxable';
       const badgeTxt = f.taxExempt ? 'Tax-Exempt' : 'Taxable';
       const yieldLbl = grp.key === 'mmf' ? '7-Day Yield' : 'SEC Yield';
@@ -89,7 +88,7 @@ export function renderTeyTable() {
 
     const catWinner = {};
     ['etf', 'mmf'].forEach(cat => {
-      const entries = TEY_FUNDS.map((f, i) => ({ i, at: afterTax[i] })).filter((_, i) => TEY_FUNDS[i].category === cat);
+      const entries = TEY_FUNDS.map((f, i) => ({ i, at: afterTax[i], category: f.category })).filter(e => e.category === cat);
       const max     = Math.max(...entries.map(e => e.at));
       catWinner[cat] = entries.find(e => e.at === max).i;
     });

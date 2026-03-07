@@ -288,3 +288,9 @@ input[type="number"].w-input:focus {
   border-radius: 2px;
   transition: width 0.2s ease, background 0.2s ease;
 }
+.modal--params {
+  max-width: 380px;
+}
+.modal-ticker--sm {
+  font-size: 1rem;
+}

@@ -42,14 +42,6 @@
         <div class="p-actions">
           <select class="preset-sel" id="preset-a">
             <option value="">Presets…</option>
-            <option value="2fund">2-Fund (VTI/VXUS 60/40)</option>
-            <option value="us_only">100% US (VTI)</option>
-            <option value="intl_only">100% International (VXUS)</option>
-            <option value="3fund">3-Fund + Small Value</option>
-            <option value="avantis_core">Avantis Core (AVGE/AVUV)</option>
-            <option value="factor_tilt">Factor Tilted</option>
-            <option value="deep_value">Deep Value</option>
-            <option value="all_avantis">All Avantis Blend</option>
           </select>
           <button class="btn-sm" id="normalize-a">Normalize</button>
           <button class="btn-sm" id="reset-a">Reset</button>
@@ -78,14 +70,6 @@
         <div class="p-actions">
           <select class="preset-sel" id="preset-b">
             <option value="">Presets…</option>
-            <option value="2fund">2-Fund (VTI/VXUS 60/40)</option>
-            <option value="us_only">100% US (VTI)</option>
-            <option value="intl_only">100% International (VXUS)</option>
-            <option value="3fund">3-Fund + Small Value</option>
-            <option value="avantis_core">Avantis Core (AVGE/AVUV)</option>
-            <option value="factor_tilt">Factor Tilted</option>
-            <option value="deep_value">Deep Value</option>
-            <option value="all_avantis">All Avantis Blend</option>
           </select>
           <button class="btn-sm" id="normalize-b">Normalize</button>
           <button class="btn-sm" id="reset-b">Reset</button>
@@ -128,7 +112,7 @@
           </div>
         </div>
         <div class="radar-body">
-          <svg id="radar-svg" viewBox="0 0 430 350" width="100%" style="max-width:430px;display:block;margin:0 auto"></svg>
+          <svg id="radar-svg" viewBox="0 0 430 350" width="100%"></svg>
         </div>
       </div>
     </div>
@@ -137,7 +121,7 @@
       <div class="stats-card">
         <div class="stats-card-header">
           <span class="stats-card-title">Projected Portfolio Value</span>
-          <div style="display:flex;align-items:center;gap:0.65rem">
+          <div class="chart-controls">
             <div class="growth-mode-toggle">
               <button class="growth-mode-btn"        id="mode-nominal">Nominal</button>
               <button class="growth-mode-btn active" id="mode-real">Real</button>
@@ -150,7 +134,7 @@
             </div>
           </div>
         </div>
-        <svg id="growth-svg" viewBox="0 0 520 300" width="100%" style="display:block"></svg>
+        <svg id="growth-svg" viewBox="0 0 520 300" width="100%"></svg>
         <div id="growth-summary" class="growth-summary"></div>
       </div>
     </div>
@@ -236,9 +220,9 @@
 
 <!-- ── Parameters Modal ─────────────────────────────────────── -->
 <div class="modal-backdrop" id="params-modal-backdrop">
-  <div class="modal" style="max-width:380px">
+  <div class="modal modal--params">
     <div class="modal-header">
-      <div class="modal-ticker" style="font-size:1rem">Parameters</div>
+      <div class="modal-ticker modal-ticker--sm">Parameters</div>
       <button class="modal-close">&times;</button>
     </div>
     <div class="params-fields">

@@ -1,4 +1,4 @@
-import { DATA_DATE } from './data.js';
+import { DATA_DATE, PRESET_OPTIONS } from './data.js';
 import { applyURLState, loadState, copyShareLink } from './state.js';
 import { buildRows, refreshTotal, applyPreset, normalizePortfolio, resetPortfolio, setRenderAll } from './portfolio.js';
 import { renderAll } from './render.js';
@@ -10,6 +10,17 @@ import { buildTeyFundCards, renderTeyTable } from './tey.js';
 setRenderAll(renderAll);
 
 function init() {
+  // Populate preset dropdowns from data
+  ['preset-a', 'preset-b'].forEach(id => {
+    const sel = document.getElementById(id);
+    PRESET_OPTIONS.forEach(({ key, label }) => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = label;
+      sel.appendChild(opt);
+    });
+  });
+
   // Data date labels
   document.getElementById('footer-data-date').textContent = DATA_DATE;
   document.getElementById('header-data-date').textContent = `Data · ${DATA_DATE}`;

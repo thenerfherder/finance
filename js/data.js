@@ -143,6 +143,17 @@ export const PRESETS = {
   'all_avantis':  { VTI:0,  VXUS:0,  VT:0,   AVGE:40, AVGV:30, AVUV:20, AVDV:10, BND:0  },
 };
 
+export const PRESET_OPTIONS = [
+  { key: '2fund',        label: '2-Fund (VTI/VXUS 60/40)'    },
+  { key: 'us_only',      label: '100% US (VTI)'               },
+  { key: 'intl_only',   label: '100% International (VXUS)'   },
+  { key: '3fund',        label: '3-Fund + Small Value'         },
+  { key: 'avantis_core', label: 'Avantis Core (AVGE/AVUV)'    },
+  { key: 'factor_tilt',  label: 'Factor Tilted'               },
+  { key: 'deep_value',   label: 'Deep Value'                  },
+  { key: 'all_avantis',  label: 'All Avantis Blend'           },
+];
+
 // ================================================================
 // DEFAULT PORTFOLIOS
 // ================================================================

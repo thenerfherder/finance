@@ -280,3 +280,16 @@
   border-top: 1px solid var(--border);
   min-height: 2rem;
 }
+#radar-svg {
+  display: block;
+  max-width: 430px;
+  margin: 0 auto;
+}
+#growth-svg {
+  display: block;
+}
+.chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
