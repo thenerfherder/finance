@@ -5,7 +5,7 @@ import { renderAll } from './render.js';
 import { setGrowthMode, toggleAdvisor, renderGrowthChart } from './charts.js';
 import { closeEtfModal, openParamsModal, closeParamsModal } from './ui.js';
 import { buildTeyFundCards, renderTeyTable, setTeyBracket } from './tey.js';
-import { initRisk } from './risk.js';
+import { initRisk, renderRiskCharts } from './risk.js';
 
 // Wire renderAll into portfolio so it can trigger re-renders without a circular import
 setRenderAll(renderAll);
@@ -139,6 +139,8 @@ function init() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      // Re-render risk charts once the tab is visible (SVG layout is unavailable while hidden)
+      if (btn.dataset.tab === 'risk') renderRiskCharts();
     });
   });
 

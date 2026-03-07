@@ -139,7 +139,7 @@ function renderRiskChart(svgId, dataKey, yMin, yMax, color, fmtY, opts = {}) {
   svg.innerHTML = s;
 }
 
-function renderBothCharts() {
+export function renderRiskCharts() {
   renderRiskChart(
     'risk-vol-svg',
     'vol',
@@ -162,10 +162,12 @@ function updateSnapshot(equity) {
   const d = RISK_DATA.find(r => r.equity === equity);
   if (!d) return;
 
-  document.getElementById('risk-snap-equity').textContent =
-    equity === 0   ? '100% Bonds' :
-    equity === 100 ? '100% Stocks' :
-    `${equity}% Stocks / ${100 - equity}% Bonds`;
+  const label = equity === 0   ? '100% Bonds'
+              : equity === 100 ? '100% Stocks'
+              : `${equity}% Stocks / ${100 - equity}% Bonds`;
+
+  document.getElementById('risk-snap-equity').textContent  = label;
+  document.getElementById('risk-equity-display').textContent = label;
 
   document.getElementById('risk-snap-ret').textContent   = '+' + d.ret.toFixed(1) + '%';
   document.getElementById('risk-snap-vol').textContent   = d.vol.toFixed(1) + '%';
@@ -184,11 +186,11 @@ export function initRisk() {
 
   slider.value = _selectedEquity;
   updateSnapshot(_selectedEquity);
-  renderBothCharts();
+  renderRiskCharts();
 
   slider.addEventListener('input', e => {
     _selectedEquity = +e.target.value;
     updateSnapshot(_selectedEquity);
-    renderBothCharts();
+    renderRiskCharts();
   });
 }
