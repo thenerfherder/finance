@@ -1,5 +1,5 @@
 import { DATA_DATE, PRESET_OPTIONS } from './data.js';
-import { applyURLState, loadState, copyShareLink } from './state.js';
+import { settings, applyURLState, loadState, copyShareLink } from './state.js';
 import { buildRows, refreshTotal, applyPreset, normalizePortfolio, resetPortfolio, setRenderAll } from './portfolio.js';
 import { renderAll } from './render.js';
 import { setGrowthMode, toggleAdvisor, renderGrowthChart } from './charts.js';
@@ -8,6 +8,23 @@ import { buildTeyFundCards, renderTeyTable } from './tey.js';
 
 // Wire renderAll into portfolio so it can trigger re-renders without a circular import
 setRenderAll(renderAll);
+
+// Sync all DOM inputs to match the current settings object.
+// Called once after state is restored from URL or localStorage.
+function syncDOMFromSettings() {
+  document.getElementById('name-a').value          = settings.nameA;
+  document.getElementById('name-b').value          = settings.nameB;
+  document.getElementById('advisor-a').checked     = settings.advisorA;
+  document.getElementById('advisor-b').checked     = settings.advisorB;
+  document.getElementById('growth-start').value    = settings.growthStart;
+  document.getElementById('growth-contrib').value  = settings.growthContrib;
+  document.getElementById('infl-rate').value       = settings.inflRate;
+  document.getElementById('rf-rate').value         = settings.rfRate;
+  document.getElementById('adv-fee').value         = settings.advFee;
+  document.getElementById('mode-nominal').classList.toggle('active', settings.growthMode === 'nominal');
+  document.getElementById('mode-real').classList.toggle('active', settings.growthMode === 'real');
+  document.getElementById('mode-advisor')?.classList.toggle('active', settings.showAdvisor);
+}
 
 function init() {
   // Populate preset dropdowns from data
@@ -26,9 +43,10 @@ function init() {
   document.getElementById('header-data-date').textContent = `Data · ${DATA_DATE}`;
   document.querySelectorAll('.method-data-date').forEach(el => el.textContent = DATA_DATE);
 
-  // Restore state
+  // Restore state then sync DOM
   const fromURL = applyURLState(new URLSearchParams(location.search));
   if (!fromURL) loadState();
+  syncDOMFromSettings();
 
   // Build portfolio UIs
   buildRows('a');
@@ -49,11 +67,11 @@ function init() {
   document.getElementById('reset-a').addEventListener('click', () => resetPortfolio('a'));
   document.getElementById('reset-b').addEventListener('click', () => resetPortfolio('b'));
 
-  document.getElementById('advisor-a').addEventListener('change', renderAll);
-  document.getElementById('advisor-b').addEventListener('change', renderAll);
+  document.getElementById('advisor-a').addEventListener('change', e => { settings.advisorA = e.target.checked; renderAll(); });
+  document.getElementById('advisor-b').addEventListener('change', e => { settings.advisorB = e.target.checked; renderAll(); });
 
-  document.getElementById('name-a').addEventListener('input', renderAll);
-  document.getElementById('name-b').addEventListener('input', renderAll);
+  document.getElementById('name-a').addEventListener('input', e => { settings.nameA = e.target.value; renderAll(); });
+  document.getElementById('name-b').addEventListener('input', e => { settings.nameB = e.target.value; renderAll(); });
 
   // ── Growth chart controls ────────────────────────────────────
   document.getElementById('mode-nominal').addEventListener('click', () => setGrowthMode('nominal'));
@@ -61,12 +79,17 @@ function init() {
   document.getElementById('mode-advisor').addEventListener('click', toggleAdvisor);
   document.getElementById('mode-params').addEventListener('click',  openParamsModal);
 
-  ['growth-start', 'growth-contrib'].forEach(id =>
-    document.getElementById(id).addEventListener('input', renderGrowthChart)
-  );
-  ['infl-rate', 'rf-rate', 'adv-fee'].forEach(id =>
-    document.getElementById(id).addEventListener('input', renderAll)
-  );
+  document.getElementById('growth-start').addEventListener('input', e => {
+    settings.growthStart = parseFloat(e.target.value) || 1000000;
+    renderGrowthChart();
+  });
+  document.getElementById('growth-contrib').addEventListener('input', e => {
+    settings.growthContrib = parseFloat(e.target.value) || 0;
+    renderGrowthChart();
+  });
+  document.getElementById('infl-rate').addEventListener('input', e => { settings.inflRate = parseFloat(e.target.value) || 2.5; renderAll(); });
+  document.getElementById('rf-rate').addEventListener('input',   e => { settings.rfRate   = parseFloat(e.target.value) || 4.0; renderAll(); });
+  document.getElementById('adv-fee').addEventListener('input',   e => { settings.advFee   = parseFloat(e.target.value) || 1.0; renderAll(); });
 
   // ── Modals ───────────────────────────────────────────────────
   document.getElementById('etf-modal-backdrop').addEventListener('click', e => {
