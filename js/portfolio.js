@@ -60,22 +60,24 @@ export function buildRows(p) {
 // ================================================================
 // INPUT HANDLERS
 // ================================================================
-export function onSlider(p, tk, raw) {
-  const v = Math.max(0, Math.min(100, parseFloat(raw) || 0));
+function applyValue(p, tk, v) {
   state[p][tk] = v;
-  const num = document.getElementById(`nu-${p}-${tk}`);
-  if (num) num.value = v;
   refreshTotal(p);
   if (_renderAll) _renderAll();
 }
 
+export function onSlider(p, tk, raw) {
+  const v = Math.max(0, Math.min(100, parseFloat(raw) || 0));
+  const num = document.getElementById(`nu-${p}-${tk}`);
+  if (num) num.value = v;
+  applyValue(p, tk, v);
+}
+
 export function onNumber(p, tk, raw) {
   const v = Math.max(0, Math.min(100, parseFloat(raw) || 0));
-  state[p][tk] = v;
   const sl = document.getElementById(`sl-${p}-${tk}`);
   if (sl) sl.value = v;
-  refreshTotal(p);
-  if (_renderAll) _renderAll();
+  applyValue(p, tk, v);
 }
 
 export function applyPreset(p, key) {

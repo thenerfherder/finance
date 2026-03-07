@@ -6,8 +6,7 @@ export function getCorr(a, b) {
   return CORR_MATRIX[`${a},${b}`] ?? CORR_MATRIX[`${b},${a}`] ?? 0;
 }
 
-export function calcStats(p) {
-  const RF    = parseFloat(document.getElementById('rf-rate')?.value) || 4.0;
+export function calcStats(p, { rf = 4.0, advisorOn = false, advFee = 1.0 } = {}) {
   const w     = state[p];
   const total = TICKERS.reduce((s, tk) => s + (w[tk] || 0), 0);
   if (total === 0) return null;
@@ -39,8 +38,8 @@ export function calcStats(p) {
     }
   });
 
-  if (document.getElementById(`advisor-${p}`)?.checked) {
-    er += parseFloat(document.getElementById('adv-fee')?.value) || 1.0;
+  if (advisorOn) {
+    er += advFee;
   }
 
   // Markowitz portfolio variance
@@ -63,10 +62,10 @@ export function calcStats(p) {
   const intlEquityFrac = equityW > 0 ? (intlPct / 100) / equityW : 0;
   const intlPctEquity  = equityW > 0 ? intlPct / equityW : 0;
   const emPctEquity    = equityW > 0 ? emPct   / equityW : 0;
-  const erpUS          = Math.max(0, 100 / CAPE_US   + EPS_GROWTH - RF);
-  const erpIntl        = Math.max(0, 100 / CAPE_INTL + EPS_GROWTH - RF);
+  const erpUS          = Math.max(0, 100 / CAPE_US   + EPS_GROWTH - rf);
+  const erpIntl        = Math.max(0, 100 / CAPE_INTL + EPS_GROWTH - rf);
   const mkt            = (1 - intlEquityFrac) * erpUS + intlEquityFrac * erpIntl;
-  const equityRet      = RF + mkt + equityHML * VPREM + equitySMB * SPREM;
+  const equityRet      = rf + mkt + equityHML * VPREM + equitySMB * SPREM;
   const factorReturn    = equityW * equityRet + bondRet;
   const factorReturnNet = factorReturn - er;
   const geometricReturnNet = factorReturnNet - (portfolioVol * portfolioVol) / 200;

@@ -17,6 +17,20 @@ export const settings = {
 };
 
 // ================================================================
+// UI MODE HELPERS
+// ================================================================
+export function applyGrowthMode(mode) {
+  settings.growthMode = mode;
+  document.getElementById('mode-nominal').classList.toggle('active', mode === 'nominal');
+  document.getElementById('mode-real').classList.toggle('active', mode === 'real');
+}
+
+export function applyAdvisorMode(show) {
+  settings.showAdvisor = show;
+  document.getElementById('mode-advisor')?.classList.toggle('active', show);
+}
+
+// ================================================================
 // PERSISTENCE
 // ================================================================
 export function saveState() {
@@ -33,7 +47,7 @@ export function saveState() {
       rfRate:    document.getElementById('rf-rate')?.value,
       advFee:    document.getElementById('adv-fee')?.value,
     }));
-  } catch(e) {}
+  } catch(e) { console.warn('basispoints: saveState failed', e); }
 }
 
 export function loadState() {
@@ -47,19 +61,12 @@ export function loadState() {
     if (s.nameB) document.getElementById('name-b').value = s.nameB;
     if (s.advisorA != null) document.getElementById('advisor-a').checked = s.advisorA;
     if (s.advisorB != null) document.getElementById('advisor-b').checked = s.advisorB;
-    if (s.growthMode) {
-      settings.growthMode = s.growthMode;
-      document.getElementById('mode-nominal').classList.toggle('active', settings.growthMode === 'nominal');
-      document.getElementById('mode-real').classList.toggle('active', settings.growthMode === 'real');
-    }
+    if (s.growthMode) applyGrowthMode(s.growthMode);
     if (s.inflRate != null) document.getElementById('infl-rate').value = s.inflRate;
     if (s.rfRate   != null) document.getElementById('rf-rate').value   = s.rfRate;
     if (s.advFee   != null) document.getElementById('adv-fee').value   = s.advFee;
-    if (s.showAdvisor != null) {
-      settings.showAdvisor = s.showAdvisor;
-      document.getElementById('mode-advisor')?.classList.toggle('active', settings.showAdvisor);
-    }
-  } catch(e) {}
+    if (s.showAdvisor != null) applyAdvisorMode(s.showAdvisor);
+  } catch(e) { console.warn('basispoints: loadState failed', e); }
 }
 
 // ================================================================
@@ -79,20 +86,13 @@ export function applyURLState(params) {
   if (params.has('nb')) document.getElementById('name-b').value = params.get('nb');
   if (params.has('aa')) document.getElementById('advisor-a').checked = params.get('aa') === '1';
   if (params.has('ab')) document.getElementById('advisor-b').checked = params.get('ab') === '1';
-  if (params.has('gm')) {
-    settings.growthMode = params.get('gm');
-    document.getElementById('mode-nominal').classList.toggle('active', settings.growthMode === 'nominal');
-    document.getElementById('mode-real').classList.toggle('active', settings.growthMode === 'real');
-  }
+  if (params.has('gm')) applyGrowthMode(params.get('gm'));
   if (params.has('gs')) document.getElementById('growth-start').value = params.get('gs');
   if (params.has('gc')) document.getElementById('growth-contrib').value = params.get('gc');
   if (params.has('ir')) document.getElementById('infl-rate').value = params.get('ir');
   if (params.has('rr')) document.getElementById('rf-rate').value   = params.get('rr');
   if (params.has('af')) document.getElementById('adv-fee').value   = params.get('af');
-  if (params.has('av')) {
-    settings.showAdvisor = params.get('av') === '1';
-    document.getElementById('mode-advisor')?.classList.toggle('active', settings.showAdvisor);
-  }
+  if (params.has('av')) applyAdvisorMode(params.get('av') === '1');
   return true;
 }
 

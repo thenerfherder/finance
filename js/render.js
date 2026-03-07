@@ -7,8 +7,10 @@ export function renderAll() {
   renderRadar();
   renderGrowthChart();
 
-  const sa = calcStats('a');
-  const sb = calcStats('b');
+  const rf     = parseFloat(document.getElementById('rf-rate')?.value) || 4.0;
+  const advFee = parseFloat(document.getElementById('adv-fee')?.value) || 1.0;
+  const sa = calcStats('a', { rf, advisorOn: document.getElementById('advisor-a')?.checked, advFee });
+  const sb = calcStats('b', { rf, advisorOn: document.getElementById('advisor-b')?.checked, advFee });
 
   const nameA = document.getElementById('name-a').value.trim() || 'Portfolio A';
   const nameB = document.getElementById('name-b').value.trim() || 'Portfolio B';

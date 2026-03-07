@@ -1,12 +1,14 @@
 import { calcStats } from './calculations.js';
-import { settings, saveState } from './state.js';
+import { settings, saveState, applyGrowthMode, applyAdvisorMode } from './state.js';
 
 // ================================================================
 // RENDER RADAR CHART
 // ================================================================
 export function renderRadar() {
-  const sa = calcStats('a');
-  const sb = calcStats('b');
+  const rf     = parseFloat(document.getElementById('rf-rate')?.value) || 4.0;
+  const advFee = parseFloat(document.getElementById('adv-fee')?.value) || 1.0;
+  const sa = calcStats('a', { rf, advisorOn: document.getElementById('advisor-a')?.checked, advFee });
+  const sb = calcStats('b', { rf, advisorOn: document.getElementById('advisor-b')?.checked, advFee });
 
   const nameA = document.getElementById('name-a').value.trim() || 'Portfolio A';
   const nameB = document.getElementById('name-b').value.trim() || 'Portfolio B';
@@ -93,16 +95,13 @@ export function renderRadar() {
 // GROWTH CHART MODE
 // ================================================================
 export function setGrowthMode(mode) {
-  settings.growthMode = mode;
-  document.getElementById('mode-nominal').classList.toggle('active', mode === 'nominal');
-  document.getElementById('mode-real').classList.toggle('active', mode === 'real');
+  applyGrowthMode(mode);
   renderGrowthChart();
   saveState();
 }
 
 export function toggleAdvisor() {
-  settings.showAdvisor = !settings.showAdvisor;
-  document.getElementById('mode-advisor').classList.toggle('active', settings.showAdvisor);
+  applyAdvisorMode(!settings.showAdvisor);
   renderGrowthChart();
   saveState();
 }
@@ -113,8 +112,13 @@ export function toggleAdvisor() {
 export function renderGrowthChart() {
   const svg     = document.getElementById('growth-svg');
   const summary = document.getElementById('growth-summary');
-  const sA = calcStats('a');
-  const sB = calcStats('b');
+  const advisorA = document.getElementById('advisor-a')?.checked;
+  const advisorB = document.getElementById('advisor-b')?.checked;
+  const ADV_FEE  = parseFloat(document.getElementById('adv-fee')?.value) || 1.0;
+  const RF       = parseFloat(document.getElementById('rf-rate')?.value) || 4.0;
+
+  const sA = calcStats('a', { rf: RF, advisorOn: advisorA, advFee: ADV_FEE });
+  const sB = calcStats('b', { rf: RF, advisorOn: advisorB, advFee: ADV_FEE });
 
   const empty = msg => {
     svg.innerHTML = `<text x="260" y="150" text-anchor="middle" dominant-baseline="middle" font-size="13" fill="var(--muted)">${msg}</text>`;
@@ -135,9 +139,6 @@ export function renderGrowthChart() {
   const rA = (1 + sA.geometricReturnNet / 100) / inflAdj - 1;
   const rB = (1 + sB.geometricReturnNet / 100) / inflAdj - 1;
 
-  const advisorA = document.getElementById('advisor-a')?.checked;
-  const advisorB = document.getElementById('advisor-b')?.checked;
-  const ADV_FEE  = parseFloat(document.getElementById('adv-fee')?.value) || 1.0;
   const rAGross  = advisorA ? (1 + (sA.geometricReturnNet + ADV_FEE) / 100) / inflAdj - 1 : 0;
   const rBGross  = advisorB ? (1 + (sB.geometricReturnNet + ADV_FEE) / 100) / inflAdj - 1 : 0;
 
