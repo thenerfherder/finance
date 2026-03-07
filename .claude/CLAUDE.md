@@ -1,13 +1,51 @@
-# Basis Points — Project Structure
+# Basis Points — Project Context & Standards
 
-## Overview
+## Purpose
 
-| | Before | After |
+Basis Points is an open-source suite of personal finance tools for do-it-yourself investors. The target user is someone managing their own portfolio — not a finance professional — who wants to understand the real trade-offs between fund choices: factor exposures, expected returns, costs, tax efficiency, and geographic allocation.
+
+The project lives entirely in the browser (no backend, no accounts) and is designed to be hosted for free on GitHub Pages.
+
+## Design Principles
+
+### 1. Calculation accuracy and traceability
+Every number shown to the user must be traceable to a published academic source or a well-known data provider. Approximations are acceptable but must be documented. Methodology tooltips in the UI should explain the formula and its source. Do not add metrics that cannot be backed by data or cited literature.
+
+Key academic foundations currently in use:
+- **Fama-French three-factor model** (SMB, HML) for factor return estimation
+- **CAPE-adjusted equity risk premium** (Shiller) for expected return
+- **Markowitz mean-variance** framework for portfolio volatility (σ_p = √(ΣᵢΣⱼ wᵢwⱼσᵢσⱼρᵢⱼ))
+- **Geometric return approximation**: geometric ≈ arithmetic − σ²/2 (variance drag)
+- **Tax Equivalent Yield**: TEY = muni yield / (1 − marginal rate)
+
+When updating constants (CAPE, bond yields, correlations, etc.), record the source and date in `data.js` comments.
+
+### 2. Pristine, modular code
+- Each JS module has a single responsibility (see File Tree below)
+- Logic modules (`calculations.js`) must not read from the DOM — UI parameters are passed as arguments by rendering callers
+- No build tooling: native ES modules only, works directly in the browser
+- Prefer explicit over implicit; no global state outside `state.js`
+- New tools should be added as new modules following the existing pattern, not by expanding existing ones
+
+### 3. Openness and simplicity
+- No frameworks, no npm dependencies, no login, no tracking
+- The entire tool must work offline after initial load
+- Code should be readable by a developer unfamiliar with the project within minutes
+
+### 4. GitHub Pages compatibility (hard constraint)
+All code must work when served as static files from GitHub Pages with zero server-side logic. Concretely:
+- **No build step** — no bundlers (Webpack, Vite, Rollup, esbuild), no TypeScript compilation, no JSX transforms. Files are served exactly as written.
+- **No `node_modules`** — all code ships in the repo; no npm install required to run or deploy
+- **Relative paths only** — all `import` statements and asset references must use relative paths (e.g. `./data.js`, not bare specifiers like `data`)
+- **No server-side redirects or rewrites** — navigation and URL sharing must work with standard query strings (`?a=...`), not hash routing or `history.pushState` paths that require a fallback `index.html` rule
+- **`<script type="module">`** is the correct and only module system to use — it is natively supported by all modern browsers and served correctly by GitHub Pages
+
+## Current Tools
+
+| Tool | File(s) | Description |
 |---|---|---|
-| Files | 1 | 10 |
-| `index.html` lines | 2,316 | 294 |
-
-Uses **native ES modules** (`<script type="module">`) — no build tool required, works on GitHub Pages.
+| Portfolio Comparator | `portfolio.js`, `render.js`, `charts.js` | Compare two ETF portfolios across factor exposures, expected return, cost, and 30-year growth |
+| Tax Equivalent Yield | `tey.js` | Compare after-tax yields of bond funds and money market funds across tax brackets |
 
 ## File Tree
 
@@ -52,11 +90,12 @@ Imports: `data.js`. Exports:
 - `saveState()` / `loadState()` — localStorage persistence
 - `applyURLState(params)` — restore state from URL query params
 - `copyShareLink()` — encode state into a shareable URL
+- `applyGrowthMode(mode)` / `applyAdvisorMode(show)` — single source of truth for toggling chart mode UI state
 
 ### `js/calculations.js`
 Imports: `data.js`, `state.js`. Exports:
 - `getCorr(a, b)` — lookup pairwise correlation
-- `calcStats(p)` — compute all portfolio statistics (PE, PB, HML, SMB, ER, factor return, geometric return, volatility, cost drag)
+- `calcStats(p, { rf, advisorOn, advFee })` — compute all portfolio statistics (PE, PB, HML, SMB, ER, factor return, geometric return, volatility, cost drag). Pure function — no DOM reads; callers pass UI parameters.
 
 ### `js/portfolio.js`
 Imports: `data.js`, `state.js`, `ui.js`. Exports:
