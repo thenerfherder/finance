@@ -1,19 +1,17 @@
 import { STAT_GROUPS } from './data.js';
 import { calcStats } from './calculations.js';
-import { saveState } from './state.js';
+import { settings, saveState } from './state.js';
 import { renderRadar, renderGrowthChart } from './charts.js';
 
 export function renderAll() {
   renderRadar();
   renderGrowthChart();
 
-  const rf     = parseFloat(document.getElementById('rf-rate')?.value) || 4.0;
-  const advFee = parseFloat(document.getElementById('adv-fee')?.value) || 1.0;
-  const sa = calcStats('a', { rf, advisorOn: document.getElementById('advisor-a')?.checked, advFee });
-  const sb = calcStats('b', { rf, advisorOn: document.getElementById('advisor-b')?.checked, advFee });
+  const sa = calcStats('a', { rf: settings.rfRate, advisorOn: settings.advisorA, advFee: settings.advFee });
+  const sb = calcStats('b', { rf: settings.rfRate, advisorOn: settings.advisorB, advFee: settings.advFee });
 
-  const nameA = document.getElementById('name-a').value.trim() || 'Portfolio A';
-  const nameB = document.getElementById('name-b').value.trim() || 'Portfolio B';
+  const nameA = settings.nameA || 'Portfolio A';
+  const nameB = settings.nameB || 'Portfolio B';
   document.getElementById('leg-a').textContent = nameA;
   document.getElementById('leg-b').textContent = nameB;
 
