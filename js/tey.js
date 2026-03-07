@@ -3,6 +3,12 @@ import { openModal } from './ui.js';
 
 const badge = f => ({ cls: f.taxExempt ? 'exempt' : 'taxable', txt: f.taxExempt ? 'Tax-Exempt' : 'Taxable' });
 
+let selectedBracketRate = null;
+export function setTeyBracket(rate) {
+  selectedBracketRate = rate;
+  renderTeyTable();
+}
+
 export function openTeyModal(i) {
   const f = TEY_FUNDS[i];
   openModal(f.ticker, f.name, f.tip, [
@@ -93,7 +99,8 @@ export function renderTeyTable() {
       catWinner[cat] = entries.find(e => e.at === max).i;
     });
 
-    html += '<tr>';
+    const isSelected = selectedBracketRate === brkt.rate;
+    html += `<tr${isSelected ? ' class="tey-row-selected"' : ''}>`;
     html += `<td><div class="tey-brkt-rate">${brkt.label}</div><div class="tey-brkt-income">${brkt.income}</div></td>`;
 
     TEY_FUNDS.forEach((f, i) => {

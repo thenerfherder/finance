@@ -193,7 +193,13 @@
   <div id="tey-funds-container"></div>
 
   <!-- ── Comparison Table ─────────────────────────────────────── -->
-  <div class="section-label">After-Tax Yield by Federal Tax Bracket</div>
+  <div class="section-label tey-bracket-header">
+    After-Tax Yield by Federal Tax Bracket
+    <span class="tey-bracket-sel-wrap">
+      <label class="tey-bracket-lbl" for="tey-bracket-sel">Your bracket:</label>
+      <select id="tey-bracket-sel"><option value="">— select —</option></select>
+    </span>
+  </div>
   <div class="stats-card">
     <div class="tey-table-wrap" id="tey-table"></div>
   </div>

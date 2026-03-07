@@ -1,10 +1,10 @@
-import { DATA_DATE, PRESET_OPTIONS, TICKERS } from './data.js';
+import { DATA_DATE, PRESET_OPTIONS, TICKERS, TEY_BRACKETS } from './data.js';
 import { state, settings, applyURLState, loadState } from './state.js';
 import { buildRows, refreshTotal, applyPreset, normalizePortfolio, resetPortfolio, setRenderAll } from './portfolio.js';
 import { renderAll } from './render.js';
 import { setGrowthMode, toggleAdvisor, renderGrowthChart } from './charts.js';
 import { closeEtfModal, openParamsModal, closeParamsModal } from './ui.js';
-import { buildTeyFundCards, renderTeyTable } from './tey.js';
+import { buildTeyFundCards, renderTeyTable, setTeyBracket } from './tey.js';
 
 // Wire renderAll into portfolio so it can trigger re-renders without a circular import
 setRenderAll(renderAll);
@@ -144,6 +144,15 @@ function init() {
   // ── TEY tool ────────────────────────────────────────────────
   buildTeyFundCards();
   renderTeyTable();
+
+  const bracketSel = document.getElementById('tey-bracket-sel');
+  TEY_BRACKETS.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.rate;
+    opt.textContent = `${b.label} — ${b.income}`;
+    bracketSel.appendChild(opt);
+  });
+  bracketSel.addEventListener('change', e => setTeyBracket(e.target.value ? +e.target.value : null));
 }
 
 init();

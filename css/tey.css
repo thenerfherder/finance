@@ -118,3 +118,19 @@
 .tey-val  { font-family: 'SF Mono','Fira Code',monospace; font-size: 0.85rem; font-weight: 700; }
 .tey-sub  { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
 .tey-cell-winner .tey-val { color: var(--green); }
+
+/* ─── TEY – Bracket selector ────────────────────────────── */
+.tey-bracket-header { display: flex; align-items: center; justify-content: space-between; }
+.tey-bracket-sel-wrap { display: flex; align-items: center; gap: 0.5rem; font-weight: 400; text-transform: none; letter-spacing: 0; }
+.tey-bracket-lbl { font-size: 0.68rem; color: var(--muted); }
+#tey-bracket-sel {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 0.72rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.tey-row-selected td { background: rgba(88, 166, 255, 0.07); }
+.tey-row-selected td:first-child { border-left: 3px solid var(--blue); padding-left: calc(1.1rem - 3px); }
