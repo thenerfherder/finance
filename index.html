@@ -289,6 +289,16 @@
     </div>
   </div>
 
+  <!-- ── Time to Recovery ──────────────────────────────────── -->
+  <div class="section-label">Time to Recovery by Equity Allocation</div>
+  <div class="stats-card" style="margin-bottom:1.5rem">
+    <div class="stats-card-header">
+      <span class="stats-card-title">Maximum Years to Full Recovery</span>
+      <span style="font-size:0.7rem;color:var(--muted);margin-left:auto">Worst historical drawdown — how long until you were whole again?</span>
+    </div>
+    <svg id="risk-recovery-svg" width="100%"></svg>
+  </div>
+
   <!-- ── Methodology ──────────────────────────────────────── -->
   <details class="method-card">
     <summary>Methodology &amp; Data Notes</summary>
@@ -301,6 +311,7 @@
         <li><strong>The U-shape in volatility:</strong> A key insight from portfolio theory — adding bonds to an all-stock portfolio initially <em>decreases</em> total volatility, because bonds and stocks are imperfectly correlated. The minimum-volatility portfolio historically sits around 20–30% equity. Adding bonds beyond that point offers only marginal further risk reduction, and an all-bond portfolio can itself be volatile (e.g., 2022: bonds lost ~13%).</li>
         <li><strong>Worst Calendar Year:</strong> The single worst annual return observed in the historical record for that equity allocation. This is a measure of short-term downside risk, not the maximum peak-to-trough drawdown. The deepest multi-year drawdowns (e.g., 1929–1932 for equities: −83% cumulative) are far larger than a single calendar year shows.</li>
         <li><strong>Best Calendar Year:</strong> The single best annual return observed. Note that bond-heavy portfolios had strong best years in 1982 (when interest rates peaked and fell sharply), which is why the best-year figure does not monotonically increase with equity allocation.</li>
+        <li><strong>Maximum Years to Recovery:</strong> The longest time (in years) it took a portfolio of that allocation to return to its prior peak, measured in nominal terms over 1926–2024. The worst case for 100% stocks was the 1929 crash, which took approximately 15 years to recover nominally (by ~1944). Recovery times compound non-linearly: going from 100% to 80% stocks roughly cuts recovery time in half, and a 60/40 portfolio has historically recovered in about 6 years or less. This metric is particularly relevant for investors who may need to draw down assets within a decade.</li>
         <li><strong>Return vs. Risk trade-off:</strong> Higher equity allocations have delivered higher long-run average returns but also higher volatility and deeper periodic losses. The right allocation depends on your time horizon, ability to tolerate losses without selling, and need for the money.</li>
         <li><strong>Limitations:</strong> This data reflects US stocks and US bonds only. International diversification can alter these characteristics. Past return and risk figures do not guarantee future results. Rebalancing frequency and taxes are not modelled.</li>
         <li><strong>This tool is for educational and illustrative purposes only. Not investment advice.</strong></li>

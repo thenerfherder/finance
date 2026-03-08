@@ -7,20 +7,22 @@
 // Updated: February 2026
 // ================================================================
 
-// Avg annual return, annual std dev (vol), worst and best calendar-year returns
-// for portfolios ranging from 100% bonds (equity=0) to 100% stocks (equity=100).
+// Avg annual return, annual std dev (vol), worst/best calendar-year returns,
+// and maximum years to full nominal recovery from worst historical drawdown.
+// recoveryYrs source: Vanguard allocation model data, 1926–2024 (nominal).
+// 100% stocks worst case: 1929 crash, nominal recovery ~1944 (15 years).
 const RISK_DATA = [
-  { equity:   0, ret: 5.2,  vol:  8.2, worstYr:  -8.1, bestYr:  32.6 },
-  { equity:  10, ret: 5.8,  vol:  7.5, worstYr:  -8.2, bestYr:  32.7 },
-  { equity:  20, ret: 6.4,  vol:  7.1, worstYr: -10.1, bestYr:  29.8 },
-  { equity:  30, ret: 7.0,  vol:  7.2, worstYr: -14.2, bestYr:  23.4 },
-  { equity:  40, ret: 7.5,  vol:  7.8, worstYr: -18.4, bestYr:  27.9 },
-  { equity:  50, ret: 8.0,  vol:  9.0, worstYr: -22.5, bestYr:  22.5 },
-  { equity:  60, ret: 8.6,  vol: 10.1, worstYr: -26.6, bestYr:  28.6 },
-  { equity:  70, ret: 9.1,  vol: 11.4, worstYr: -30.1, bestYr:  32.0 },
-  { equity:  80, ret: 9.5,  vol: 12.8, worstYr: -34.9, bestYr:  37.6 },
-  { equity:  90, ret: 10.0, vol: 14.2, worstYr: -39.6, bestYr:  45.0 },
-  { equity: 100, ret: 10.4, vol: 15.8, worstYr: -43.1, bestYr:  54.2 },
+  { equity:   0, ret: 5.2,  vol:  8.2, worstYr:  -8.1, bestYr:  32.6, recoveryYrs:  2 },
+  { equity:  10, ret: 5.8,  vol:  7.5, worstYr:  -8.2, bestYr:  32.7, recoveryYrs:  2 },
+  { equity:  20, ret: 6.4,  vol:  7.1, worstYr: -10.1, bestYr:  29.8, recoveryYrs:  2 },
+  { equity:  30, ret: 7.0,  vol:  7.2, worstYr: -14.2, bestYr:  23.4, recoveryYrs:  2 },
+  { equity:  40, ret: 7.5,  vol:  7.8, worstYr: -18.4, bestYr:  27.9, recoveryYrs:  3 },
+  { equity:  50, ret: 8.0,  vol:  9.0, worstYr: -22.5, bestYr:  22.5, recoveryYrs:  4 },
+  { equity:  60, ret: 8.6,  vol: 10.1, worstYr: -26.6, bestYr:  28.6, recoveryYrs:  6 },
+  { equity:  70, ret: 9.1,  vol: 11.4, worstYr: -30.1, bestYr:  32.0, recoveryYrs:  8 },
+  { equity:  80, ret: 9.5,  vol: 12.8, worstYr: -34.9, bestYr:  37.6, recoveryYrs: 11 },
+  { equity:  90, ret: 10.0, vol: 14.2, worstYr: -39.6, bestYr:  45.0, recoveryYrs: 13 },
+  { equity: 100, ret: 10.4, vol: 15.8, worstYr: -43.1, bestYr:  54.2, recoveryYrs: 15 },
 ];
 
 let _selectedEquity = 80;
@@ -56,7 +58,9 @@ function renderRiskChart(svgId, dataKey, yMin, yMax, color, fmtY, opts = {}) {
   const PW = VW - ML - MR;
   const PH = VH - MT - MB;
 
-  const mapX = eq  => ML + (eq / 100) * PW;
+  // X axis is inverted: left = 100% stocks (high risk), right = 0% stocks (all bonds, low risk).
+  // This matches the conventional "adding bonds reduces risk" left-to-right narrative.
+  const mapX = eq => ML + ((100 - eq) / 100) * PW;
   const mapY = val => MT + PH - ((val - yMin) / (yMax - yMin)) * PH;
 
   let s = '';
@@ -85,7 +89,7 @@ function renderRiskChart(svgId, dataKey, yMin, yMax, color, fmtY, opts = {}) {
   // X axis caption
   const captY = (MT + PH + 30).toFixed(1);
   const captX = (ML + PW / 2).toFixed(1);
-  s += `<text x="${captX}" y="${captY}" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="${FONT}">← All Bonds · Equity Allocation · All Stocks →</text>`;
+  s += `<text x="${captX}" y="${captY}" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="${FONT}">← All Stocks · % Equity · All Bonds →</text>`;
 
   // Selected equity vertical guide line (drawn behind the curve)
   const selX = mapX(_selectedEquity).toFixed(1);
@@ -155,6 +159,14 @@ export function renderRiskCharts() {
     '#f85149',
     v => (v >= 0 ? '+' : '') + v.toFixed(0) + '%',
     { gridLines: [-10, -20, -30, -40, -50], showZeroLine: true }
+  );
+  renderRiskChart(
+    'risk-recovery-svg',
+    'recoveryYrs',
+    0, 16,
+    '#d29922',
+    v => v.toFixed(0) + ' yr' + (v === 1 ? '' : 's'),
+    { gridLines: [2, 4, 6, 8, 10, 12, 14] }
   );
 }
 
