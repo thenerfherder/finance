@@ -264,10 +264,6 @@ function renderDistributionChart() {
   const captX = (ML + PW / 2).toFixed(1);
   s += `<text x="${captX}" y="${captY}" text-anchor="middle" font-size="9.5" fill="var(--muted)" font-family="${FONT}">Annual Return</text>`;
 
-  // Probability of loss annotation (bottom-left)
-  const pLoss = normalCDF((0 - mu) / sigma);
-  s += `<text x="${(ML + 4).toFixed(1)}" y="${(MT + PH - 6).toFixed(1)}" font-size="9" fill="#f85149" font-family="${FONT}" opacity="0.85">${(pLoss * 100).toFixed(0)}% loss yrs</text>`;
-
   // Chart border
   s += `<rect x="${ML}" y="${MT}" width="${PW}" height="${PH}" fill="none" stroke="var(--border)" stroke-width="1"/>`;
 
